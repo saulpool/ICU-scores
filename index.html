@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICU Scores Calculator</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📟</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style type="text/tailwindcss">
+        @layer components {
+            .lbl-lg { @apply block text-sm font-bold text-slate-700 mb-1 capitalize; }
+            .lbl-pri { @apply block text-xs font-bold text-slate-700 mb-1 capitalize; }
+            .lbl-sec { @apply block text-[10px] font-bold text-slate-500 mb-1 capitalize; }
+            .inp-base { @apply w-full rounded-lg border-slate-200 p-3 border focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white transition-shadow; }
+            .inp-sm { @apply w-full rounded border-slate-200 p-1.5 text-xs bg-slate-50 outline-none focus:ring-1 focus:ring-indigo-400 border transition-shadow; }
+            .sel-base { @apply w-full rounded-lg border-slate-200 shadow-sm p-3 border bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-bold text-slate-700 text-center cursor-pointer; }
+            .sel-sm { @apply w-full rounded border-slate-200 p-1.5 text-[10px] bg-white border outline-none cursor-pointer focus:ring-1 focus:ring-indigo-400; }
+            .box-calc { @apply w-full p-3 rounded-lg border flex items-center justify-center h-[50px] transition-colors; }
+            .box-slate { @apply bg-slate-50 border-slate-200; }
+            .box-indigo { @apply bg-indigo-50/30 border-indigo-100; }
+            .toggle-btn { @apply flex items-center justify-center space-x-2 cursor-pointer w-full rounded-lg border-slate-200 p-3 border bg-slate-50 hover:bg-slate-100 transition-colors h-[50px]; }
+            .score-res-card { @apply bg-white p-4 shadow-sm rounded-xl transition-all flex flex-col; }
+            .wean-box { @apply bg-white p-2 rounded-lg border border-slate-200 shadow-sm flex flex-col items-center justify-center; }
+            .live-term { @apply w-full h-48 bg-slate-900 text-green-400 font-mono text-xs p-4 rounded-b-xl rounded-tr-xl outline-none resize-none shadow-inner leading-relaxed; }
+            .live-badge { @apply bg-slate-800 text-green-400 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-t-xl w-max shadow-md; }
+            .adv-lbl { @apply text-slate-500 block text-[11px] font-bold mb-0.5 tracking-wide; }
+            .adv-val { @apply font-bold text-slate-800 text-lg block; }
+            .adv-val-imp { @apply font-black text-2xl block leading-tight; }
+        }
+    </style>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .input-group.hidden { display: none; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number], input[type=text][inputmode="numeric"] { -moz-appearance: textfield; }
+        #copy-toast { visibility: hidden; opacity: 0; transition: opacity 0.3s, visibility 0.3s; }
+        #copy-toast.show { visibility: visible; opacity: 1; }
+        .sex-toggle.active { background-color: #4338ca; color: white; border-color: #4338ca; }
+        html { scroll-behavior: smooth; scroll-padding-top: 6rem; transition: filter 0.3s ease; }
+        .hidden-scrollbar::-webkit-scrollbar { display: none; }
+        .hidden-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        body:not(.intense-active) .intense-only { display: none !important; }
+        
+        /* MAGIC DARK MODE */
+        html.dark-theme { filter: invert(1) hue-rotate(180deg); background-color: #0f172a; }
+        html.dark-theme .live-term, html.dark-theme .live-badge { filter: invert(1) hue-rotate(180deg); }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-900 pb-12 transition-colors duration-200">
+
+<div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+    <header id="score-selection-panel" class="relative bg-white shadow-sm rounded-2xl mb-6 border border-slate-200 overflow-hidden nav-section px-5 py-4 flex justify-between items-center flex-col lg:flex-row items-start lg:items-center gap-4 lg:gap-6">
+        <div class="flex items-center gap-4 w-full lg:w-auto shrink-0">
+            <span class="text-5xl lg:text-6xl drop-shadow-md">📟</span>
+            <div class="text-left">
+                <h1 class="text-2xl sm:text-3xl font-black text-indigo-700 tracking-tight leading-tight">ICU Scores Calculator</h1>
+                <p class="text-[10px] text-slate-500 font-bold tracking-wide mt-0.5">v4.5.2 | Vibe-Coded by Saul Pool R5 Med. Crit. on HTML, JS & Tailwind</p>
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-2.5 w-full lg:w-auto flex-wrap xl:flex-nowrap justify-start lg:justify-end shrink-0">
+            <label class="relative cursor-pointer flex-1 sm:flex-none group">
+                <input type="checkbox" id="select-daily" class="peer hidden score-toggle" checked>
+                <div class="flex flex-col justify-center h-full border-2 rounded-xl px-3.5 py-2.5 transition-all duration-300 bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100 peer-checked:shadow-md peer-checked:bg-indigo-50 peer-checked:border-indigo-500 peer-checked:text-indigo-700">
+                    <span class="font-black text-sm uppercase tracking-wide">Daily</span>
+                    <span class="text-[9px] font-bold opacity-80 leading-tight mt-0.5">NEWS2, SOFA-2, SAPS-II, APACHE-II</span>
+                </div>
+            </label>
+
+            <label class="relative cursor-pointer flex-1 sm:flex-none group">
+                <input type="checkbox" id="select-admission" class="peer hidden score-toggle">
+                <div class="flex flex-col justify-center h-full border-2 rounded-xl px-3.5 py-2.5 transition-all duration-300 bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100 peer-checked:shadow-md peer-checked:bg-teal-50 peer-checked:border-teal-500 peer-checked:text-teal-700">
+                    <span class="font-black text-sm uppercase tracking-wide">Admission</span>
+                    <span class="text-[9px] font-bold opacity-80 leading-tight mt-0.5">SAPS-III, MPM0</span>
+                </div>
+            </label>
+
+            <label class="relative cursor-pointer flex-1 sm:flex-none group">
+                <input type="checkbox" id="select-preop" class="peer hidden score-toggle">
+                <div class="flex flex-col justify-center h-full border-2 rounded-xl px-3.5 py-2.5 transition-all duration-300 bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100 peer-checked:shadow-md peer-checked:bg-purple-50 peer-checked:border-purple-500 peer-checked:text-purple-700">
+                    <span class="font-black text-sm uppercase tracking-wide">PreOp</span>
+                    <span class="text-[9px] font-bold opacity-80 leading-tight mt-0.5">ASA, RCRI, MICA, POSPOM</span>
+                </div>
+            </label>
+        </div>
+    </header>
+
+    <main class="flex flex-col lg:flex-row gap-6 lg:gap-3 items-start">
+        <aside class="order-1 lg:order-2 sticky top-4 lg:top-8 z-50 flex flex-row lg:flex-col items-center gap-3 w-full lg:w-12 flex-shrink-0 overflow-x-auto hidden-scrollbar">
+            <button onclick="window.toggleDarkMode()" id="dark_mode_btn" class="p-2 rounded-full bg-slate-800 text-amber-300 hover:bg-slate-700 transition shadow-md border border-slate-700 w-10 h-10 lg:w-12 lg:h-12 flex items-center justify-center text-xl lg:text-2xl flex-shrink-0">🌙</button>
+            <button onclick="window.toggleIntenseMode()" id="intense_mode_btn" class="p-2 rounded-full bg-white text-slate-700 hover:bg-slate-100 transition shadow-md border border-slate-200 w-10 h-10 lg:w-12 lg:h-12 flex items-center justify-center text-xl lg:text-2xl flex-shrink-0">🧮</button>
+            <nav id="floating-nav" class="flex flex-row lg:flex-col bg-indigo-50/95 backdrop-blur-md lg:bg-indigo-50 lg:shadow-sm border border-indigo-100 rounded-full w-full lg:w-10 flex-shrink-0 items-center justify-start py-2 lg:py-4 gap-2 lg:gap-3">
+                <a href="#score-selection-panel" title="Back to Top" class="nav-link text-xl relative flex items-center justify-center w-10 h-10 lg:w-full transition-all duration-300 flex-shrink-0 opacity-100 grayscale-0 scale-125 drop-shadow-md">📟</a>
+                <a href="#sec-patient" title="Patient Details" class="nav-link text-xl relative flex items-center justify-center w-10 h-10 lg:w-full transition-all duration-300 flex-shrink-0 opacity-100 grayscale-0 scale-125 drop-shadow-md">🆔<div class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full hidden indicator-dot" id="dot-sec-patient"></div></a>
+                <a href="#sec-labs" title="Other Labs" class="nav-link text-xl relative flex items-center justify-center w-10 h-10 lg:w-full transition-all duration-300 flex-shrink-0 opacity-60 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-110">🧪<div class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full hidden indicator-dot" id="dot-sec-labs"></div></a>
+                <a href="#sec-admission" title="Admission Details" id="link-adm" class="nav-link text-xl relative flex items-center justify-center w-10 h-10 lg:w-full transition-all duration-300 flex-shrink-0 opacity-60 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-110 hidden adm-expanded">🚑<div class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full hidden indicator-dot" id="dot-sec-admission"></div></a>
+                <a href="#sec-neuro" title="Neurological" class="nav-link text-xl relative flex items-center justify-center w-10 h-10 lg:w-full transition-all duration-300 flex-shrink-0 opacity-60 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-110">🧠<div class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full hidden indicator-dot" id="dot-sec-neuro"></div></a>
+                <a href="#sec-resp" title="Respiratory" class="nav-link text-xl relative flex items-center justify-center w-10 h-10 lg:w-full transition-all duration-300 flex-shrink-0 opacity-60 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-110">🫁<div class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full hidden indicator-dot" id="dot-sec-resp"></div></a>
+                <a href="#sec-hemo" title="Hemodynamics" class="nav-link text-xl relative flex items-center justify-center w-10 h-10 lg:w-full transition-all duration-300 flex-shrink-0 opacity-60 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-110">🫀<div class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full hidden indicator-dot" id="dot-sec-hemo"></div></a>
+                <a href="#sec-enteral" title="Enteral / Metabolic" class="nav-link text-xl relative flex items-center justify-center w-10 h-10 lg:w-full transition-all duration-300 flex-shrink-0 opacity-60 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-110 intense-only">🔋<div class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full hidden indicator-dot" id="dot-sec-enteral"></div></a>
+                <a href="#sec-renal" title="Renal" class="nav-link text-xl relative flex items-center justify-center w-10 h-10 lg:w-full transition-all duration-300 flex-shrink-0 opacity-60 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-110">🫘<div class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full hidden indicator-dot" id="dot-sec-renal"></div></a>
+                <a href="#preop-block" title="Preoperative" id="link-preop" class="nav-link text-xl relative flex items-center justify-center w-10 h-10 lg:w-full transition-all duration-300 flex-shrink-0 opacity-60 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-110 hidden">🔪<div class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full hidden indicator-dot" id="dot-preop-block"></div></a>
+            </nav>
+        </aside>
+
+        <div id="input-panel" class="order-2 lg:order-1 flex-1 min-w-0 bg-white p-6 shadow-md rounded-2xl border border-slate-200 space-y-6">
+            <div class="flex justify-between items-center bg-indigo-100 px-4 py-2 rounded-xl mb-4">
+                <h2 class="text-indigo-800 text-lg font-black uppercase tracking-wide flex items-center gap-3">
+                    Data Input
+                    <span id="no-scores-warning" class="hidden text-[10px] bg-red-100 text-red-600 px-2 py-1 rounded-md tracking-normal font-bold normal-case shadow-sm border border-red-200">Select at least one group of Scores</span>
+                </h2>
+                <div class="intense-only flex items-center space-x-2 bg-white/50 px-2 py-1 rounded-lg border border-indigo-200 shadow-sm">
+                    <label class="text-sm font-black text-indigo-800 uppercase tracking-wider">🛌</label>
+                    <input type="text" id="bed_number" placeholder="#" style="width: 4ch; min-width: 4ch; max-width: 16rem;" class="inp-base !p-1 text-center text-indigo-700 focus:ring-indigo-400 font-bold" oninput="this.style.width = Math.max(4, this.value.length + 3) + 'ch';">
+                </div>
+            </div>
+
+            <div id="sec-patient" class="space-y-4 nav-section">
+                <h3 class="text-xs font-black text-blue-600 uppercase tracking-[0.2em]">Patient Details</h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div class="input-group" data-scores="sofa,saps2,apache2,news2,preop,saps3,mpm0"><label class="lbl-pri">Age (yr)</label><input type="number" id="age" min="18" placeholder="years" class="inp-base"></div>
+                    <div class="input-group intense-only" data-scores="sofa,saps2,apache2,saps3"><label class="lbl-pri">Weight (kg)</label><input type="number" id="weight" placeholder="kg" class="inp-base"></div>
+                    <div class="input-group intense-only" data-scores="sofa,saps2,apache2"><button type="button" id="height_toggle_btn" onclick="window.toggleHeightMode()" class="lbl-sec text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded hover:bg-indigo-100 w-full text-left transition h-5">Height (cm)</button><input type="number" id="height_input" placeholder="cm" class="inp-base"></div>
+                    <div class="input-group intense-only" data-scores="sofa,saps2,apache2,news2,preop,saps3"><label class="lbl-sec">Sex</label><div class="flex space-x-2"><button type="button" onclick="window.setSex('Male')" id="sex-male" class="sex-toggle flex-1 py-3 rounded-lg border border-slate-200 font-bold text-slate-600 text-sm transition-colors">Male</button><button type="button" onclick="window.setSex('Female')" id="sex-female" class="sex-toggle flex-1 py-3 rounded-lg border border-slate-200 font-bold text-slate-600 text-sm transition-colors">Female</button><input type="hidden" id="sex" value=""></div></div>
+                    <div class="input-group md:col-span-2" data-scores="sofa,saps2,apache2,news2,saps3,mpm0"><label class="lbl-pri text-indigo-700 uppercase">LABS</label><input type="text" id="labs_paste" placeholder="Paste Labs / Laboratoriazo" class="inp-base bg-indigo-50/20 border-indigo-200 shadow-sm"></div>
+                    <div class="input-group md:col-span-2 intense-only" data-scores="sofa,saps2,apache2,news2,preop,saps3,mpm0"><label class="lbl-pri">Known Patient?</label><input type="text" id="known_patient_paste" placeholder="Paste previous report here to extract: Age, Sex, Weight & Height..." class="inp-base shadow-sm"></div>
+                </div>
+            </div>
+
+            <div id="sec-labs" class="space-y-4 pt-4 border-t border-slate-100 nav-section">
+                <h3 class="text-xs font-black text-fuchsia-500 uppercase tracking-[0.2em]">Other Labs</h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4" id="dyn_labs_1"></div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4" id="dyn_labs_2"></div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4 intense-only">
+                    <div class="input-group md:col-start-3"><label class="lbl-pri">ALT</label><input type="number" id="alt_lab" placeholder="U/L" class="inp-base"></div>
+                    <div class="input-group"><label class="lbl-pri">FA</label><input type="number" id="fa_lab" placeholder="U/L" class="inp-base"></div>
+                </div>
+            </div>
+
+            <div id="sec-admission" class="space-y-4 pt-4 border-t border-slate-100 input-group nav-section" data-scores="saps2,apache2,saps3,mpm0">
+                <h3 class="text-xs font-black text-teal-600 uppercase tracking-[0.2em]">Admission Details</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="input-group" data-scores="saps2,apache2,saps3,mpm0"><label class="lbl-pri">Admission Type</label><select id="admissionType" class="sel-base focus:ring-teal-500"><option value="Medical" selected>Medical (Non-operative)</option><option value="Scheduled Surgical">Scheduled Surgical</option><option value="Emergency Surgical">Emergency Surgical</option></select></div>
+                    <div class="input-group hidden adm-expanded" data-scores="saps3"><label class="lbl-pri">Location before ICU</label><select id="icu_location" class="sel-base focus:ring-teal-500"><option value="Emergency Room" selected>Emergency Room</option><option value="Hospital Ward">Hospital Ward</option><option value="Operating Room">Operating Room</option><option value="Other Hospital">Another Hospital</option></select></div>
+                    <div class="input-group hidden adm-expanded" data-scores="saps3"><label class="lbl-pri">Days in Hosp. before ICU</label><input type="number" id="hosp_days_before" value="0" min="0" class="inp-base focus:ring-teal-500"></div>
+                </div>
+                <div class="hidden adm-expanded" data-scores="saps3,mpm0">
+                    <div class="bg-teal-50/50 border border-teal-100 rounded-xl p-4">
+                        <h4 class="lbl-pri text-teal-700 uppercase mb-3 border-b border-teal-100 pb-1">Acute Conditions Prior to ICU</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 gap-x-4 gap-y-2" id="dyn_acute_conds"></div>
+                    </div>
+                </div>
+                <div class="input-group pt-2" data-scores="saps2,apache2,preop,saps3,mpm0">
+                    <h4 class="lbl-pri uppercase mb-2">Chronic Health Conditions</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50/80 border border-slate-200 rounded-xl p-4 shadow-sm" id="dyn_chr_conds"></div>
+                </div>
+            </div>
+
+            <div id="sec-neuro" class="space-y-4 pt-4 border-t border-slate-100 nav-section">
+                <h3 class="text-xs font-black text-pink-500 uppercase tracking-[0.2em]">Neurological</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start gap-6">
+                    <div class="input-group flex flex-col" data-scores="sofa,saps2,apache2,saps3,mpm0">
+                        <label class="lbl-lg">Glasgow (3-15)</label>
+                        <input type="number" id="gcs" min="3" max="15" placeholder="GCS" class="inp-base text-center font-bold text-slate-700 mb-2">
+                        <div class="grid grid-cols-3 gap-1">
+                            <select id="gcs_eye" class="sel-sm"><option value="">Eye</option><option value="4">4 - Spontaneous</option><option value="3">3 - To sound</option><option value="2">2 - To pressure</option><option value="1">1 - None</option></select>
+                            <select id="gcs_verbal" class="sel-sm"><option value="">Verbal</option><option value="5">5 - Orientated</option><option value="4">4 - Confused</option><option value="3">3 - Words</option><option value="2">2 - Sounds</option><option value="1">1 - None</option><option value="1">1T - Intubated</option></select>
+                            <select id="gcs_motor" class="sel-sm"><option value="">Motor</option><option value="6">6 - Obeys commands</option><option value="5">5 - Localising</option><option value="4">4 - Normal flexion</option><option value="3">3 - Abnormal flexion</option><option value="2">2 - Extension</option><option value="1">1 - None</option></select>
+                        </div>
+                    </div>
+                    <div class="input-group flex flex-col intense-only" data-scores="news2,sofa,saps2,apache2,saps3,mpm0">
+                        <div class="flex justify-between items-center mb-1"><label class="lbl-lg mb-0">Neuro</label><label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" id="use_sedation" class="accent-indigo-600 h-3 w-3 rounded"><span class="lbl-sec text-indigo-600 mb-0">Sedation?</span></label></div>
+                        <input type="text" id="neuro_score_input" placeholder="RASS / FOUR" class="inp-base text-center font-bold text-slate-700 mb-2">
+                        <div id="four_container" class="grid grid-cols-1 md:grid-cols-2 gap-4 !gap-1"></div>
+                        <div id="rass_container" class="hidden"><select id="rass_score" class="sel-sm text-[11px] font-bold text-slate-600"><option value="">Select RASS...</option><option value="4">+4: Combative</option><option value="3">+3: Very Agitated</option><option value="2">+2: Agitated</option><option value="1">+1: Restless</option><option value="0">0: Alert and Calm</option><option value="-1">-1: Drowsy</option><option value="-2">-2: Light Sedation</option><option value="-3">-3: Moderate Sedation</option><option value="-4">-4: Deep Sedation</option><option value="-5">-5: Unarousable</option></select></div>
+                    </div>
+                    <div class="input-group flex flex-col" data-scores="news2">
+                        <label class="lbl-lg">Consciousness</label>
+                        <select id="consciousness_level" class="sel-base mb-2"><option value="" disabled selected>ACVPU?</option><option value="Alert">Alert</option><option value="Confusion">Confusion (New)</option><option value="Voice">Responds to Voice</option><option value="Pain">Responds to Pain</option><option value="Unresponsive">Unresponsive</option></select>
+                        <div class="input-group" data-scores="sofa"><label class="flex items-center space-x-2 cursor-pointer pt-1"><input type="checkbox" id="delirium_drugs" class="accent-yellow-500 h-4 w-4 rounded bg-yellow-50"><span class="lbl-pri mb-0">Drugs for Delirium?</span></label></div>
+                    </div>
+                    <div class="input-group flex flex-col intense-only" data-scores="news2,sofa,saps2,apache2,saps3,mpm0">
+                        <div class="flex justify-between items-center mb-1 space-x-1"><label class="lbl-lg mb-0">Pain</label><select id="pain_scale_selector" class="w-auto rounded border-none p-0 text-[10px] bg-transparent outline-none font-black text-indigo-700 cursor-pointer focus:ring-0"><option value="evn" selected>EVN (0-10)</option><option value="bps">BPS (3-12)</option><option value="cpot">CPOT (0-8)</option><option value="nvps">NVPS (0-10)</option></select></div>
+                        <input type="number" id="pain_score_total" placeholder="Score" class="inp-base bg-slate-50 text-center font-bold text-slate-700 mb-2" readonly>
+                        <div id="pain_tools_container"></div>
+                    </div>
+                    <div id="sedation_drugs_container" class="hidden md:col-span-2 input-group border-t border-slate-100 pt-4 mt-2 intense-only"><label class="lbl-pri text-pink-500 uppercase">Sedation & Analgesia</label><input type="text" id="sedation_drugs" placeholder="Drugs and doses..." class="inp-base"></div>
+                </div>
+            </div>
+
+            <div id="sec-resp" class="space-y-4 pt-4 border-t border-slate-100 nav-section">
+                <h3 class="text-xs font-black text-blue-500 uppercase tracking-[0.2em]">Respiratory</h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div class="input-group" data-scores="news2,apache2"><label class="lbl-pri">Respiratory Rate</label><input type="number" id="rr" placeholder="rpm" class="inp-base"></div>
+                    <div class="input-group" data-scores="news2"><label class="lbl-pri text-green-600">SpO₂ (%)</label><input type="number" id="spo2" min="50" max="100" placeholder="%" class="inp-base border-green-100 shadow-sm"></div>
+                    <div class="input-group" data-scores="sofa,saps2,apache2,saps3"><label class="lbl-pri text-indigo-700">FiO₂ (%)</label><input type="number" id="fio2" min="21" max="100" value="21" class="inp-base border-indigo-200 font-black text-indigo-700"></div>
+                    <div class="input-group intense-only"><label class="lbl-sec text-indigo-400 text-center leading-tight">A-a Gradient</label><div class="box-calc box-indigo"><span id="calculatedAaGradient" class="text-lg font-black text-indigo-700 leading-none">-</span></div></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-center mt-4">
+                    <div class="input-group" data-scores="sofa,saps2,apache2,saps3"><label class="lbl-pri">Arterial PaO₂</label><input type="number" id="pao2" placeholder="mmHg" class="inp-base"></div>
+                    <div class="input-group" data-scores="apache2"><label class="lbl-pri">Arterial PaCO₂</label><input type="number" id="paco2" placeholder="mmHg" class="inp-base"></div>
+                    <div class="input-group"><label class="lbl-sec text-indigo-400 text-center leading-tight">PaO₂/FiO₂</label><div class="box-calc box-indigo"><span id="calculatedPaFi" class="text-lg font-black text-indigo-700 leading-none">-</span></div></div>
+                    <div class="input-group"><label class="lbl-sec text-indigo-400 text-center leading-tight">SpO₂/FiO₂</label><div class="box-calc box-indigo"><span id="calculatedSaFi" class="text-lg font-black text-indigo-700 leading-none">-</span></div></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mt-4">
+                    <div class="input-group flex flex-col" data-scores="sofa,saps2,news2,saps3"><label class="toggle-btn"><input type="checkbox" id="vent_hfnc_mv" class="accent-indigo-600 h-4 w-4 rounded"><span class="lbl-pri mb-0">HFNC, NIMV, MV</span></label></div>
+                    <div class="input-group flex flex-col md:col-span-2" data-scores="news2"><label class="toggle-btn !p-2"><input type="checkbox" id="hypercapnic_failure" class="accent-green-600 h-4 w-4 rounded"><span class="lbl-sec text-slate-700 leading-tight text-center mb-0">Hypercapnic Failure (SaO₂ 88-92% / COPD or Lung Fibrosis)</span></label></div>
+                    <div class="input-group" data-scores="apache2"><label class="lbl-pri text-indigo-700 uppercase">PB (MTY 740)</label><input type="number" id="pb" value="740" class="inp-base border-indigo-200 font-bold text-indigo-700"></div>
+                </div>
+                <div class="input-group hidden mt-4 bg-slate-50 p-4 rounded-xl border border-slate-200 intense-only" id="vent_settings_container">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div class="input-group"><label class="lbl-sec text-indigo-400 text-center leading-tight">Vent Mode</label><div class="box-calc box-indigo"><span id="vent_mode_display" class="text-lg font-black text-indigo-700 leading-none">-</span></div><input type="hidden" id="vent_mode_internal" value=""></div>
+                        <div class="md:col-span-3"><label class="lbl-pri">Settings</label><input type="text" id="vent_settings" placeholder="e.g. PCV, PEEP 10, VC 450, Peak 25..." class="inp-base"></div>
+                    </div>
+                    <div class="grid grid-cols-3 md:grid-cols-6 gap-2 mt-4 p-3 border border-slate-200 rounded-xl bg-white intense-only" id="vent_params_grid">
+                        <div><label id="lbl_vent_vt" class="lbl-sec mb-1">VT</label><input type="number" id="vent_vt" class="inp-sm"></div>
+                        <div><label class="lbl-sec mb-1">PEEP</label><input type="number" id="vent_peep" class="inp-sm"></div>
+                        <div><label class="lbl-sec mb-1">Peak</label><input type="number" id="vent_pip" class="inp-sm"></div>
+                        <div id="col_vent_pplat"><label class="lbl-sec mb-1">PPlat</label><input type="number" id="vent_pplat" class="inp-sm"></div>
+                        <div id="col_vent_ti"><label class="lbl-sec mb-1">Ti (sec)</label><input type="number" id="vent_flow" step="0.1" class="inp-sm"></div>
+                        <div id="col_vent_ie"><label class="lbl-sec mb-1">I:E Ratio</label><div class="inp-sm bg-indigo-50 font-black text-indigo-700 text-center h-[30px] flex items-center justify-center"><span id="calc_ie">-</span></div></div>
+                        <div id="col_vent_mv" class="hidden"><label class="lbl-sec mb-1">MV (L/min)</label><div class="inp-sm bg-indigo-50 font-black text-indigo-700 text-center h-[30px] flex items-center justify-center"><span id="calc_mv">-</span></div></div>
+                    </div>
+                    <div id="rox_container" class="hidden mt-3 bg-indigo-50 p-4 rounded-xl border border-indigo-100 flex justify-between items-center intense-only"><div class="flex flex-col"><span class="text-sm font-bold text-indigo-800 tracking-widest capitalize">ROX Index</span><span id="rox_risk" class="text-[9px] font-bold text-indigo-600 mt-0.5"></span></div><span id="calc_rox" class="text-xl font-black text-indigo-600">-</span></div>
+                    <div id="hacor_container" class="hidden mt-3 bg-indigo-50 p-4 rounded-xl border border-indigo-100 flex justify-between items-center intense-only"><div class="flex flex-col"><span class="text-sm font-bold text-indigo-800 tracking-widest capitalize">HACOR Score</span><span id="hacor_risk" class="text-[10px] font-bold text-indigo-600 capitalize">Pending</span></div><span id="calc_hacor" class="text-2xl font-black text-indigo-600">-</span></div>
+                    <div id="advanced_mech_container" class="hidden grid grid-cols-1 md:grid-cols-3 gap-4 mt-3 bg-indigo-50 p-4 rounded-xl border border-indigo-100 intense-only"><div class="flex justify-between items-center"><span class="text-sm font-bold text-indigo-800 tracking-widest">ΔP</span><span id="calc_dp" class="text-xl font-black text-indigo-600">-</span></div><div class="flex justify-between items-center"><span class="text-sm font-bold text-indigo-800 tracking-widest">MP</span><span id="calc_mp" class="text-xl font-black text-indigo-600">-</span></div><div class="flex justify-between items-center"><span class="text-sm font-bold text-indigo-800 tracking-widest capitalize">Cstat</span><span id="calc_cstat" class="text-xl font-black text-indigo-600">-</span></div></div>
+                    <div id="weaning_container" class="hidden mt-3 bg-teal-50 p-4 rounded-xl border border-teal-100 space-y-4 intense-only">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 !gap-2">
+                            <div class="wean-box"><span class="lbl-sec text-teal-800 mb-0 text-center">ΔPaw (Dyn ΔP)</span><span id="calc_psv_dp" class="text-lg font-black text-teal-600 leading-none mt-1">-</span></div>
+                            <div class="wean-box"><span class="lbl-sec text-teal-800 mb-0">Cdyn</span><span id="calc_psv_cdyn" class="text-lg font-black text-teal-600 leading-none mt-1">-</span></div>
+                            <div class="wean-box"><span class="lbl-sec text-teal-800 mb-0">MP</span><span id="calc_psv_mp" class="text-lg font-black text-teal-600 leading-none mt-1">-</span></div>
+                            <div class="wean-box"><span class="lbl-sec text-teal-800 mb-0">RSBI (rpm/L)</span><span id="calc_rsbi" class="text-lg font-black text-teal-600 leading-none mt-1">-</span></div>
+                        </div>
+
+                        <div class="pt-1 pb-2 border-b border-teal-200">
+                            <label class="flex items-center space-x-2 cursor-pointer w-max">
+                                <input type="checkbox" id="weaning_toggle" class="accent-teal-600 h-4 w-4 rounded" onchange="document.getElementById('adv_weaning_panel').classList.toggle('hidden', !this.checked);">
+                                <span class="text-xs font-black text-teal-800 tracking-widest uppercase">Weaning / Extubation</span>
+                            </label>
+                        </div>
+
+                        <div id="adv_weaning_panel" class="hidden space-y-3">
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                                <div><label class="lbl-sec text-teal-700">Days of MV</label><input type="number" id="days_mv" min="0" class="inp-sm"></div>
+                                <div class="flex items-center pt-5 pl-2"><label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" id="neuro_comorb" class="accent-teal-600 h-5 w-5 rounded"><span class="lbl-sec text-teal-800 mb-0">Neuro Comorb.</span></label></div>
+                                <div><label class="lbl-sec text-teal-700">MRC Score (0-60)</label><input type="number" id="mrc_score" min="0" max="60" class="inp-sm font-bold text-teal-700"></div>
+                                <div class="pt-4"><button type="button" onclick="document.getElementById('mrc_dropdown').classList.toggle('hidden')" class="w-full bg-white hover:bg-teal-100 text-teal-700 border border-teal-200 rounded p-1.5 text-xs font-bold transition-colors shadow-sm">MRC Calc</button></div>
+                            </div>
+
+                            <div id="mrc_dropdown" class="hidden bg-white border border-teal-200 rounded-lg p-3 shadow-inner">
+                                <table class="w-full text-left text-[10px]">
+                                    <thead><tr class="text-slate-500 border-b border-slate-200"><th class="pb-1">Muscle</th><th class="pb-1 text-center">Left</th><th class="pb-1 text-center">Right</th><th class="pb-1 pl-2">Movement Strength</th></tr></thead>
+                                    <tbody id="mrc_tbody" class="text-slate-700 font-bold"></tbody>
+                                </table>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                <div class="flex flex-col justify-center bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                                    <div class="flex justify-between items-center w-full mb-1">
+                                        <span class="lbl-sec text-teal-800 mb-0">Cdyn-MP</span>
+                                        <span id="cdyn_mp_risk" class="text-[9px] font-bold text-slate-500 capitalize">Weaning Risk (Pending)</span>
+                                    </div>
+                                    <div class="flex items-baseline space-x-1 w-full">
+                                        <span id="calc_cdyn_mp" class="text-2xl font-black text-teal-600">-</span>
+                                        <span class="text-[10px] font-bold text-teal-700">cmH₂O²/min</span>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col justify-center bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                                    <span class="lbl-sec text-teal-800 mb-1">ExPreS Score (Extubation success)</span>
+                                    <div class="flex items-baseline w-full">
+                                        <span id="calc_expres" class="text-2xl font-black text-teal-600">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sec-hemo" class="space-y-4 pt-4 border-t border-slate-100 nav-section">
+                <h3 class="text-xs font-black text-red-600 uppercase tracking-[0.2em]">Hemodynamics</h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div class="input-group" data-scores="news2,sofa,saps2,apache2,saps3,mpm0"><label class="lbl-lg">Systolic BP</label><input type="number" id="sbp" placeholder="mmHg" class="inp-base"></div>
+                    <div class="input-group" data-scores="sofa,apache2"><label class="lbl-lg">Diastolic BP</label><input type="number" id="dbp" placeholder="mmHg" class="inp-base"></div>
+                    <div class="input-group" data-scores="sofa,apache2"><label class="lbl-lg text-slate-500">MAP (mmHg)</label><div class="box-calc box-slate"><span id="calculatedMap" class="text-xl font-black text-indigo-600 leading-none">-</span></div></div>
+                    <div class="input-group intense-only"><label class="lbl-lg">CRT (sec)</label><input type="text" inputmode="numeric" id="crt" placeholder="seconds" class="inp-base"></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mt-4">
+                    <div class="input-group" data-scores="news2,saps2,apache2,saps3,mpm0"><label class="lbl-pri">HR (bpm)</label><input type="number" id="hr" placeholder="bpm" class="inp-base"></div>
+                    <div class="input-group" data-scores="news2,saps2,apache2,saps3"><label class="lbl-pri">TEMP (°C)</label><input type="number" id="temp" step="0.1" placeholder="°C" class="inp-base"></div>
+                    <div class="input-group intense-only" data-scores="news2,sofa,saps2,apache2"><label class="lbl-sec text-center leading-tight">SI (0.5-0.7)</label><div class="box-calc box-slate"><span id="calculatedSI" class="text-lg font-black text-slate-700 leading-none">-</span></div></div>
+                    <div class="input-group intense-only" data-scores="news2,sofa,saps2,apache2"><label class="lbl-sec text-center leading-tight">RASI (<1.0)</label><div class="box-calc box-slate"><span id="calculatedRASI" class="text-lg font-black text-slate-700 leading-none">-</span></div></div>
+                </div>
+                <div class="input-group bg-red-50/30 p-6 rounded-2xl border border-red-100" data-scores="sofa,saps2,saps3">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-xs font-black text-red-800 tracking-widest capitalize">Pressors & Inotropes</h4>
+                        <div class="flex items-center space-x-3 md:space-x-4">
+                            <label class="flex items-center space-x-2 cursor-pointer bg-white/60 px-2 py-1 rounded border border-red-200 hover:bg-white transition-colors shadow-sm"><input type="checkbox" id="show_rare_pressors" class="accent-red-600 h-3 w-3 rounded" onchange="document.querySelectorAll('.dopa-phenyl-item').forEach(el=>el.classList.toggle('hidden', !this.checked))"><span class="lbl-sec text-red-800 mb-0 font-bold">Dopa/Phenyl</span></label>
+                            <label class="flex items-center space-x-2 cursor-pointer bg-white/60 px-2 py-1 rounded border border-red-200 hover:bg-white transition-colors shadow-sm"><input type="checkbox" id="inotrope_support" class="accent-red-600 h-3 w-3 rounded" onchange="document.querySelectorAll('.inotrope-item').forEach(el=>el.classList.toggle('hidden', !this.checked))"><span class="lbl-sec text-red-800 mb-0 font-bold">Inotrope</span></label>
+                            <div class="flex flex-col items-end"><label class="text-[10px] font-black text-red-800 capitalize mb-1">Total NEE Equiv.</label><div class="bg-red-600 text-white px-3 py-1.5 rounded-full inline-flex items-center justify-center shadow-sm"><span id="calculatedNEE" class="text-xl font-black tracking-tighter leading-none">0.00</span></div></div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div class="md:col-start-1 md:row-start-1"><label class="lbl-sec">Norepinephrine</label><input type="number" id="dose_ne" step="0.01" placeholder="mcg/kg/min" class="inp-sm font-bold border-red-100"></div>
+                        <div class="md:col-start-2 md:row-start-1"><label class="lbl-sec">Epinephrine</label><input type="number" id="dose_epi" step="0.01" placeholder="mcg/kg/min" class="inp-sm font-bold border-red-100"></div>
+                        <div class="md:col-start-3 md:row-start-1"><label class="lbl-sec">Vasopressin</label><input type="number" id="dose_vaso" step="0.01" placeholder="UI/min" class="inp-sm font-bold border-red-100"></div>
+                        <div class="hidden dopa-phenyl-item md:col-start-4 md:row-start-1"><label class="lbl-sec text-red-800">Phenylephrine</label><input type="number" id="dose_phenyl" step="0.1" placeholder="mcg/kg/min" class="inp-sm font-bold border-red-200 shadow-sm"></div>
+                        
+                        <div class="hidden inotrope-item md:col-start-1 md:row-start-2 intense-only"><label class="lbl-sec text-indigo-800">Dobutamine</label><input type="number" id="dose_dobu" step="0.1" placeholder="mcg/kg/min" class="inp-sm font-bold border-red-200 shadow-sm"></div>
+                        <div class="hidden inotrope-item md:col-start-2 md:row-start-2 intense-only"><label class="lbl-sec text-indigo-800">Levosimendan</label><input type="number" id="dose_levo" step="0.01" placeholder="mcg/kg/min" class="inp-sm font-bold border-red-200 shadow-sm"></div>
+                        <div class="hidden inotrope-item md:col-start-3 md:row-start-2 intense-only"><label class="lbl-sec text-indigo-800">Milrinone</label><input type="number" id="dose_milri" step="0.01" placeholder="mcg/kg/min" class="inp-sm font-bold border-red-200 shadow-sm"></div>
+                        <div class="hidden dopa-phenyl-item md:col-start-4 md:row-start-2"><label class="lbl-sec text-red-800">Dopamine</label><input type="number" id="dose_dopa" step="1" placeholder="mcg/kg/min" class="inp-sm font-bold border-red-200 shadow-sm"></div>
+                    </div>
+                </div>
+                
+                <div class="input-group md:col-span-4 mt-4 border-t border-slate-100 pt-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <label class="toggle-btn">
+                            <input type="checkbox" id="mech_cv_support" class="accent-indigo-600 h-4 w-4 rounded" onchange="document.getElementById('mech_cv_settings_container')?.classList.toggle('hidden', !this.checked)">
+                            <span class="lbl-pri text-slate-700 mb-0">Mech. CV Support (ECMO, IABP...)</span>
+                        </label>
+                        <label class="toggle-btn intense-only">
+                            <input type="checkbox" id="ekg_analysis_toggle" class="accent-red-600 h-4 w-4 rounded" onchange="document.getElementById('ekg_container')?.classList.toggle('hidden', !this.checked); window.updateEKG();">
+                            <span class="lbl-pri text-slate-700 mb-0">EKG Analysis?</span>
+                        </label>
+                    </div>
+
+                    <div id="mech_cv_settings_container" class="hidden mb-4 p-4 rounded-xl border border-indigo-100 bg-indigo-50/30 intense-only">
+                        <label class="lbl-pri text-indigo-800">Support Parameters (IABP, ECMO VA/VV, Impella...)</label>
+                        <input type="text" id="cv_support_settings" placeholder="e.g. ECMO VA Flow 4.0L, RPM 3000..." class="inp-base bg-white mt-1 border-indigo-200">
+                    </div>
+
+                    <div id="ekg_container" class="hidden grid grid-cols-1 md:grid-cols-3 gap-4 bg-red-50/30 p-4 rounded-xl border border-red-100 intense-only w-full">
+                        <div class="md:col-span-2 flex flex-col gap-4">
+                            <div>
+                                <label class="lbl-pri mb-1 text-sm">EKG Analysis</label>
+                                <input type="text" id="ekg_input" placeholder="Sintaxis: Reg/Irreg 9 Rs, RR 15 cp, DI +7, aVF +1 // PR 8 mm..." class="inp-base mb-1 shadow-sm border-red-200">
+                                <p class="text-[9px] text-slate-500 font-medium mt-1">(cp/sq/mm = x1 | cg/bq = x5)</p>
+                            </div>
+                            
+                            <div class="bg-white p-3 rounded-lg border border-red-100 shadow-sm h-full">
+                                <div id="ekg_grid_dinamico" class="grid grid-cols-1 md:grid-cols-3 gap-2 items-end">
+                                    <div><label class="lbl-sec"><span class="reg-only">RR (mm/cp)</span><span class="irr-only hidden">QRS (10s)</span></label>
+                                        <input type="number" id="ekg_rr_val" class="inp-sm border-red-200 reg-only" placeholder="mm">
+                                        <input type="number" id="ekg_qrs_10s" class="inp-sm border-red-200 irr-only hidden" placeholder="#">
+                                    </div>
+                                    <div class="irr-only hidden"><label class="lbl-sec">RR Min (mm)</label><input type="number" id="ekg_rr_min" class="inp-sm border-red-200" placeholder="mm"></div>
+                                    <div class="irr-only hidden"><label class="lbl-sec">RR Max (mm)</label><input type="number" id="ekg_rr_max" class="inp-sm border-red-200" placeholder="mm"></div>
+                                    <div><label class="lbl-sec">DI</label><input type="number" id="ekg_d1" class="inp-sm border-red-200" step="0.1" placeholder="mm"></div>
+                                    <div><label class="lbl-sec">aVF</label><input type="number" id="ekg_avf" class="inp-sm border-red-200" step="0.1" placeholder="mm"></div>
+                                    <div><label class="lbl-sec">PR (mm)</label><input type="number" id="ekg_pr" class="inp-sm border-red-200" placeholder="mm"></div>
+                                    <div><label class="lbl-sec">QRS (mm)</label><input type="number" id="ekg_qrs" class="inp-sm border-red-200" placeholder="mm"></div>
+                                    <div><label class="lbl-sec">QT (mm)</label><input type="number" id="ekg_qt" class="inp-sm border-red-200" placeholder="mm"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="md:col-span-1 flex flex-col gap-4">
+                            <button type="button" id="ekg_rit_btn" onclick="window.toggleEKGRhythm()" class="w-full py-2 text-xs font-black uppercase bg-white border-2 border-red-200 text-red-600 rounded-lg shadow-sm transition-colors tracking-widest">Regular?</button>
+                            <input type="hidden" id="ekg_rit" value="reg">
+                            
+                            <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 shadow-sm flex-1 flex flex-col justify-center">
+                                <div class="grid grid-cols-2 gap-y-3 gap-x-2 w-full">
+                                    <div class="flex flex-col"><span class="lbl-sec mb-0">HR</span><span id="calc_ekg_hr" class="font-black text-red-600">-</span></div>
+                                    <div class="flex flex-col"><span class="lbl-sec mb-0">Axis</span><span id="calc_ekg_axis" class="font-black text-red-600">-</span></div>
+                                    <div class="col-span-2 border-t border-slate-200 my-0.5"></div>
+                                    <div class="flex flex-col"><span class="lbl-sec mb-0">PR</span><span id="calc_ekg_pr" class="font-black text-red-600">-</span></div>
+                                    <div class="flex flex-col"><span class="lbl-sec mb-0">QRS</span><span id="calc_ekg_qrs" class="font-black text-red-600">-</span></div>
+                                    <div class="col-span-2 border-t border-slate-200 my-0.5"></div>
+                                    <div class="col-span-2 flex flex-col mt-1">
+                                        <div class="flex items-center space-x-1"><span class="lbl-sec mb-0">QTc</span><select id="ekg_qtc_form" class="w-auto border-none bg-transparent text-[9px] text-slate-500 font-bold p-0 cursor-pointer focus:ring-0 outline-none"><option value="frd">Fridericia</option><option value="frm">Framingham</option><option value="hod">Hodges</option></select></div>
+                                        <span id="calc_ekg_qtc" class="font-black text-red-600">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sec-enteral" class="space-y-4 pt-4 border-t border-slate-100 nav-section intense-only">
+                <h3 class="text-xs font-black text-emerald-600 uppercase tracking-[0.2em]">Enteral / Metabolic</h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start mt-4">
+                    <div class="input-group" data-scores="news2,sofa,saps2,apache2,saps3,mpm0"><label class="lbl-pri">Gluc</label><input type="number" id="gluc_cap" placeholder="mg/dl" class="inp-base"></div>
+                    <div class="input-group"><label class="lbl-sec text-center leading-tight text-emerald-700">Total Insulin</label><div class="box-calc box-slate bg-emerald-50/30 border-emerald-200"><span id="smart_insulin_total" class="text-sm font-black text-emerald-600 leading-none">-</span></div></div>
+                    <div class="input-group"><label class="lbl-pri">Route</label><select id="nutri_route" class="sel-base" onchange="window.updateNutritionUI()"><option value="ayuno">Fasting NPO</option><option value="vo">Oral</option><option value="enteral">Enteral</option><option value="parenteral">Parenteral TPN</option></select></div>
+                    <div class="input-group"><label class="lbl-sec text-center leading-tight">R Factor</label><div class="box-calc box-slate"><span id="calc_r_factor" class="text-lg font-black text-slate-700 leading-none">-</span></div></div>
+                </div>
+                
+                <div id="nutri_view_fasting" class="grid grid-cols-1 mt-4">
+                    <div class="input-group"><label class="lbl-pri">Coment. / Insulina</label><input type="text" id="ent_comment_fasting" placeholder="Insulin (Ej. Glargina 10-0-0) or notes..." class="inp-base"></div>
+                </div>
+                <div id="nutri_view_oral" class="hidden grid grid-cols-1 md:grid-cols-4 gap-4 items-end mt-4">
+                    <div class="input-group"><label class="lbl-pri">Cal. Supply (kcal)</label><input type="number" id="nutri_cal_supply" class="inp-base"></div>
+                    <div class="input-group"><label class="lbl-pri">Prot. Supply (g)</label><input type="number" id="nutri_prot_supply" class="inp-base"></div>
+                    <div class="input-group md:col-span-2"><label class="lbl-pri">Coment. / Insulina</label><input type="text" id="ent_comment_oral" placeholder="Insulin (Ej. Alg II) or notes..." class="inp-base"></div>
+                </div>
+                <div id="nutri_view_enteral" class="hidden grid grid-cols-1 md:grid-cols-4 gap-4 items-end mt-4">
+                    <div class="input-group"><label class="lbl-pri !normal-case">Cal in Suplement</label><input type="number" id="ent_cal" step="0.1" placeholder="(kcal/ml)" class="inp-base"></div>
+                    <div class="input-group"><label class="lbl-pri !normal-case">Prot in Suplement</label><input type="number" id="ent_prot" step="0.01" placeholder="(g/ml)" class="inp-base"></div>
+                    <div class="input-group"><button type="button" id="ent_target_btn" onclick="window.toggleNutritionTarget()" class="lbl-sec text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded hover:bg-indigo-100 w-full text-left transition h-5">Target (kcal/kg/d)</button><input type="number" id="ent_target" step="0.1" placeholder="Amount" class="inp-base"></div>
+                    <div class="input-group"><label class="lbl-pri !normal-case">Diet (ml/hr)</label><input type="number" id="diet_rate" step="0.1" placeholder="ml/hr" class="inp-base font-bold text-teal-700"></div>
+                    <div class="input-group md:col-span-4"><label class="lbl-pri">Coment. / Insulina</label><input type="text" id="ent_comment" placeholder="Insulin (Ej. Lispro 10-5-5) or notes..." class="inp-base"></div>
+                </div>
+                <div id="nutri_view_parenteral" class="hidden flex flex-col gap-3 mt-4 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                    <div class="grid grid-cols-4 gap-2">
+                        <div><label class="lbl-sec">Cal Total</label><input type="number" id="paren_cal_tot" class="inp-sm"></div>
+                        <div><label class="lbl-sec">Dextrose</label><input type="number" id="paren_dext" class="inp-sm"></div>
+                        <div><label class="lbl-sec">Aminoacid</label><input type="number" id="paren_amino" class="inp-sm"></div>
+                        <div><label class="lbl-sec">Lipids</label><input type="number" id="paren_lip" class="inp-sm"></div>
+                    </div>
+                    <div class="grid grid-cols-6 gap-2">
+                        <div><label class="lbl-sec">Na</label><input type="number" id="paren_na" class="inp-sm"></div>
+                        <div><label class="lbl-sec">Cl</label><input type="number" id="paren_cl" class="inp-sm"></div>
+                        <div><label class="lbl-sec">K</label><input type="number" id="paren_k" class="inp-sm"></div>
+                        <div><label class="lbl-sec">Ca</label><input type="number" id="paren_ca" class="inp-sm"></div>
+                        <div><label class="lbl-sec">P</label><input type="number" id="paren_p" class="inp-sm"></div>
+                        <div><label class="lbl-sec">Mg</label><input type="number" id="paren_mg" class="inp-sm"></div>
+                    </div>
+                    <div class="grid grid-cols-1"><label class="lbl-sec">Coment. / Insulina</label><input type="text" id="ent_comment_paren" placeholder="Insulin (Ej. Alg II) or notes..." class="inp-sm"></div>
+                </div>
+
+                <div id="propofol_calc_container" class="hidden mt-4 bg-emerald-50/30 p-4 rounded-xl border border-emerald-100 intense-only">
+                    <h4 class="text-xs font-black text-emerald-800 tracking-widest capitalize border-b border-emerald-200 pb-1 mb-3">Lipid Supply (Propofol)</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div><label class="lbl-sec">mcg/kg/min</label><input type="number" id="propo_dose" step="0.1" placeholder="Dose" class="inp-base border-emerald-200 font-bold" oninput="window.updatePropofol()"></div>
+                        <div><label class="lbl-sec">% (1% / 2%)</label><select id="propo_conc" class="sel-base border-emerald-200" onchange="window.updatePropofol()"><option value="0.1" selected>1% (10mg/ml)</option><option value="0.05">2% (20mg/ml)</option></select></div>
+                        <div><label class="lbl-sec text-center leading-tight">ml/hr</label><div class="box-calc box-slate bg-white border-emerald-200"><span id="calc_propo_ml" class="text-lg font-black text-emerald-700 leading-none">-</span></div></div>
+                        <div><label class="lbl-sec text-center leading-tight">kcal/d (kcal/hr)</label><div class="box-calc box-slate bg-white border-emerald-200"><span id="calc_propo_kcal" class="text-[14px] font-black text-emerald-700 leading-none">-</span></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sec-renal" class="space-y-4 pt-4 border-t border-slate-100 nav-section">
+                <h3 class="text-xs font-black text-amber-600 uppercase tracking-[0.2em]">Renal</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mt-4">
+                    <div class="input-group" data-scores="sofa,apache2,preop,saps3,mpm0"><label class="lbl-pri">Creatinine</label><input type="number" id="creatinine" step="0.1" placeholder="mg/dL" class="inp-base"></div>
+                    <div class="input-group" data-scores="sofa,saps2,apache2,news2,preop,saps3,mpm0"><label class="lbl-pri">BUN</label><input type="number" id="bun" placeholder="mg/dL" class="inp-base"></div>
+                    <div class="input-group intense-only"><label class="lbl-pri !normal-case">In (ml)</label><input type="text" inputmode="numeric" id="fluid_in" placeholder="mL" class="inp-base"></div>
+                    <div class="input-group" data-scores="sofa,saps2"><label class="lbl-pri">Time Period (Hr)</label><input type="number" id="uoHours" min="1" placeholder="hours" class="inp-base"></div>
+
+                    <div class="input-group intense-only"><label class="lbl-sec text-center leading-tight !normal-case">CrCl (ml/min)</label><div class="box-calc box-indigo"><span id="calculatedCrCl" class="text-lg font-black text-indigo-700 leading-none">-</span></div></div>
+                    <div class="input-group intense-only"><label class="lbl-sec text-center leading-tight">eGFR (CKD-EPI)</label><div class="box-calc box-indigo"><span id="calculatedEGFR" class="text-lg font-black text-indigo-700 leading-none">-</span></div></div>
+                    <div class="input-group intense-only"><label class="lbl-pri !normal-case">Out (ml)</label><input type="text" inputmode="numeric" id="fluid_out" placeholder="mL" class="inp-base"></div>
+                    <div class="input-group" data-scores="sofa,saps2"><label class="lbl-pri !normal-case">Urine Output (ml)</label><input type="text" inputmode="numeric" id="urineOutput" placeholder="mL" class="inp-base"></div>
+
+                    <div class="input-group intense-only"><label class="lbl-sec text-center leading-tight !normal-case">Est. 24h UO (ml)</label><div class="box-calc box-indigo"><span id="calculated24hUO" class="text-lg font-black text-indigo-700 leading-none">-</span></div></div>
+                    <div class="input-group intense-only"><label class="lbl-sec text-center leading-tight !normal-case">UO Index (ml/kg/h)</label><div class="box-calc box-indigo"><span id="calculatedUIndex" class="text-lg font-black text-indigo-700 leading-none">-</span></div></div>
+                    <div class="input-group intense-only"><label class="lbl-sec text-center leading-tight !normal-case">Balance (ml)</label><div class="box-calc box-indigo"><span id="calc_balance" class="text-lg font-black text-indigo-700 leading-none">-</span></div></div>
+                    <div class="input-group intense-only"><label class="lbl-pri !normal-case">Balance Ac. (ml)</label><input type="text" inputmode="numeric" id="balance_ac" placeholder="mL" class="inp-base"></div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                    <div class="input-group" data-scores="sofa,apache2">
+                        <label class="lbl-pri">Renal Replacement?</label>
+                        <select id="rrt_modality" class="sel-base">
+                            <option value="" selected>No RRT</option>
+                            <option value="H. Dial.">H. Dial.</option>
+                            <option value="Perit. Dial.">Perit. Dial.</option>
+                            <option value="CRRT">CRRT</option>
+                        </select>
+                    </div>
+                    <div class="input-group" data-scores="apache2">
+                        <label class="lbl-pri">Acute Kidney Injury?</label>
+                        <select id="kdigo_stage" class="sel-base focus:ring-blue-500">
+                            <option value="" selected>No AKI</option>
+                            <option value="I">KDIGO AKI I (Cr 1.5-1.9x baseline OR UO &lt;0.5 for 6-12h)</option>
+                            <option value="II">KDIGO AKI II (Cr 2.0-2.9x baseline OR UO &lt;0.5 for &ge;12h)</option>
+                            <option value="III">KDIGO AKI III (Cr &ge;3.0x OR RRT OR UO &lt;0.3 for &ge;24h / Anuria)</option>
+                        </select>
+                    </div>
+                    <div class="input-group intense-only"><label class="lbl-pri text-slate-500">Hourly Intake</label><input type="text" id="fluid_proy_input" placeholder="ml+ml+ml..." class="inp-base"></div>
+                    <div class="input-group intense-only"><label class="lbl-pri text-slate-500">Estim. Daily Intake</label><div class="box-calc box-slate"><span id="calc_fluid_proy" class="text-lg font-black text-slate-700 leading-none">-</span></div></div>
+                </div>
+                <div id="rrt_settings_container" class="hidden input-group mt-4 border-t border-slate-100 pt-4 intense-only"><label class="lbl-pri text-amber-600">RRT Settings</label><input type="text" id="rrt_settings" placeholder="Modo, UF, Flujo..." class="inp-base"></div>
+            </div>
+
+            <div id="preop-block" class="space-y-4 pt-4 border-t border-slate-100 input-group nav-section" data-scores="preop">
+                <h3 class="text-xs font-black text-purple-600 uppercase tracking-[0.2em]">Preoperative Assessment</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                    <div class="flex flex-col gap-4">
+                        <div class="input-group"><label class="lbl-lg">Functional Status</label><select id="functional_status" class="sel-base font-normal text-left"><option value="" disabled selected>Select Status...</option><option value="Independent">Independent</option><option value="Partially Dependent">Partially Dependent</option><option value="Totally Dependent">Totally Dependent</option></select></div>
+                        <div class="input-group"><label class="lbl-lg">ASA Physical Status</label><select id="asa_class" class="sel-base font-normal text-left"><option value="" disabled selected>Select ASA Class...</option><option value="1">I - Normal healthy patient</option><option value="2">II - Mild systemic disease</option><option value="3">III - Severe systemic disease</option><option value="4">IV - Severe systemic disease (constant life threat)</option><option value="5">V - Moribund patient</option><option value="6">VI - BD Organ Donor</option></select></div>
+                        <div class="input-group"><label class="lbl-lg">Surgery Risk Category</label><select id="surgery_risk" class="sel-base font-normal text-left"><option value="" disabled selected>Select Category...</option><option value="Minor">Minor (breast, skin, eye)</option><option value="Moderate">Moderate (ortho, hernia, gb)</option><option value="Major">Major (intestinal, intrathoracic)</option><option value="Aortic">Ultra-Major / Aortic</option></select></div>
+                    </div>
+                    <div class="bg-purple-50/50 border border-purple-100 rounded-xl p-4 h-full">
+                        <h4 class="lbl-pri text-purple-700 mb-3">Surgical Comorbidities</h4>
+                        <div class="grid grid-cols-1 gap-3" id="dyn_surg_conds"></div>
+                    </div>
+                </div>
+            </div>
+
+            <button id="calc_btn" onclick="window.calculateAllScores()" class="w-full bg-indigo-700 text-white font-black py-6 rounded-2xl hover:bg-indigo-800 transition shadow-xl text-xl mt-10">Calculate Active Scores</button>
+        </div>
+
+        <div class="order-3 lg:order-3 w-full lg:w-80 xl:w-96 flex-shrink-0 space-y-6">
+            <section id="patient-data-summary" class="bg-white p-6 shadow-md rounded-2xl border border-slate-200 intense-only">
+                <h2 class="bg-indigo-100 text-indigo-800 px-4 py-3 rounded-xl text-lg font-black mb-4 uppercase tracking-wide">Advanced Patient Calculations</h2>
+                <div class="flex flex-col gap-3 font-medium">
+                    <div class="grid grid-cols-3 gap-2 border-b border-slate-50 pb-2">
+                        <div><span class="adv-lbl" id="summary-height-label">Height (cm)</span><span id="summary-height" class="adv-val">-</span></div>
+                        <div><span class="adv-lbl">Weight (kg)</span><span id="summary-weight" class="adv-val">-</span></div>
+                        <div><span class="adv-lbl">BMI</span><span id="summary-bmi" class="adv-val-imp text-indigo-600">-</span></div>
+                    </div>
+                    <div id="ibw_vt_grid" class="grid grid-cols-2 gap-2 border-b border-slate-50 pb-2 transition-all">
+                        <div><span class="adv-lbl">IBW (kg)</span><span id="summary-ibw" class="adv-val">-</span></div>
+                        <div><span class="adv-lbl">Vt (ml/kg)</span><span id="summary-vt-kg" class="adv-val-imp text-indigo-600">-</span></div>
+                        <div id="dyn_corrbw" class="contents"></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 border-b border-slate-50 pb-2 mt-2 border-t pt-2">
+                        <div><span class="adv-lbl">Nutri BW (Cal/Prot) kg</span><span id="summary-nutribw" class="adv-val-imp text-emerald-600">-</span></div>
+                        <div><span class="adv-lbl">LBW (kg)</span><span id="summary-lbw" class="adv-val-imp text-indigo-600">-</span></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><span class="adv-lbl">Daily Cal (kcal/kg/d)</span><span id="summary-cal-d" class="adv-val-imp text-teal-600">-</span></div>
+                        <div><span class="adv-lbl">Daily Prot (g/kg/d)</span><span id="summary-prot-d" class="adv-val-imp text-teal-600">-</span></div>
+                    </div>
+                </div>
+                <div class="pt-4 mt-4 border-t border-slate-100 hidden adm-expanded intense-only" id="mnutric-container"><div class="flex justify-between items-center bg-teal-50 border border-teal-100 rounded-xl p-3"><div><span class="block text-xs font-black text-teal-700 uppercase tracking-wider">mNUTRIC Score</span><span class="block text-[9px] font-bold text-teal-600 mt-0.5" id="mnutric-risk">Risk: -</span></div><div class="text-2xl font-black text-teal-600" id="summary-mnutric">-</div></div><div class="text-[9px] text-slate-500 mt-2 font-medium text-center" id="mnutric-details">Calculated on 'Calculate Active Scores'</div></div>
+            </section>
+
+            <div id="output-panel" class="flex flex-col gap-4">
+                <div id="live_monitor_container" class="hidden flex-col gap-0 mb-4 order-first">
+                    <div class="live-badge">Live Output Preview</div>
+                    <textarea id="live_monitor_text" class="live-term" readonly></textarea>
+                </div>
+                <h2 onclick="window.copyToClipboard()" class="relative bg-slate-900 text-white hover:bg-black px-4 py-4 rounded-xl text-lg font-black uppercase tracking-wide text-center cursor-pointer transition shadow-md active:scale-95 flex items-center justify-center gap-3">
+                    <span>Results</span>
+                    <span>🖨️</span>
+                    <div id="copy-toast" class="absolute -top-12 left-0 right-0 mx-auto w-32 text-center bg-indigo-700 text-white text-xs font-black px-4 py-2 rounded-full shadow-xl pointer-events-none">COPIED!</div>
+                </h2>
+                <div id="error-message" class="hidden bg-red-100 border-2 border-red-200 text-red-700 px-4 py-4 rounded-xl shadow-md order-first"><strong class="font-black block uppercase text-[10px] tracking-widest mb-1">Missing Data</strong><span class="text-sm font-medium" id="errorMessageText">Please fill all fields.</span></div>
+                <div id="soft-warning-message" class="hidden bg-amber-50 border-2 border-amber-200 text-amber-800 px-4 py-4 rounded-xl shadow-md order-first mt-1"><strong class="font-black block uppercase text-[10px] tracking-widest mb-1">Ventilator & System Alerts</strong><ul class="text-sm font-medium space-y-1" id="softWarningList"></ul></div>
+                <div id="dynamic-score-cards" class="flex flex-col gap-4 contents"></div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<textarea id="hidden-copy-area" class="fixed opacity-0 pointer-events-none" aria-hidden="true"></textarea>
+
+<script>
+    const activeScores = { news2: !0, sofa: !0, saps2: !0, apache2: !0, saps3: !1, mpm0: !1, preop: !1 };
+    let isUlnaMode = !1, isProteinTarget = !1, isIntenseMode = !1, hasAttemptedCalculation = !1;
+    let initialState = {};
+
+    const getVal = (id, i = !1) => { let e = document.getElementById(id); if(!e) return null; if(e.type === 'checkbox') return e.checked; if(e.value === "") return null; let n = i ? parseInt(e.value) : parseFloat(e.value); return isNaN(n) ? 0 : n; };
+    const displayError = m => { let e = document.getElementById('error-message'), t = document.getElementById('errorMessageText'); e && t && (t.textContent = m, e.classList.remove('hidden')); };
+    const clearError = () => document.getElementById('error-message')?.classList.add('hidden');
+
+    window.savePatientData = () => {
+        let d = {}, b = (document.getElementById('bed_number')?.value.split('[')[0].trim()) || 'default';
+        document.querySelectorAll('input, select').forEach(e => e.id && e.id !== 'bed_number' && (d[e.id] = e.type === 'checkbox' ? e.checked : e.value));
+        d._ts = Date.now(); localStorage.setItem('icu_bed_' + b, JSON.stringify(d));
+    };
+
+    window.loadPatientData = (bed) => {
+        let b = (bed?.split('[')[0].trim()) || 'default', s = localStorage.getItem('icu_bed_' + b), d = s ? JSON.parse(s) : initialState;
+        document.querySelectorAll('input, select').forEach(e => e.id && e.id !== 'bed_number' && d[e.id] !== undefined && (e.type === 'checkbox' ? (e.checked = d[e.id]) : (e.value = d[e.id])));
+        
+        let t = (i, c, v) => document.getElementById(i)?.classList.toggle('hidden', v ? !document.getElementById(c)?.value : !document.getElementById(c)?.checked);
+        t('mech_cv_settings_container', 'mech_cv_support'); t('ekg_container', 'ekg_analysis_toggle'); t('rrt_settings_container', 'rrt_modality', 1); t('adv_weaning_panel', 'weaning_toggle');
+        let h = document.getElementById('height_toggle_btn'); h && (h.textContent = isUlnaMode ? 'Ulnar Lgt (cm)' : 'Height (cm)');
+        
+        window.updateGCS(); window.updateNeuroScore(); window.updatePainScore(); window.updatePatientSummary(); window.updatePhysiology(); window.updateRespiratoryMechanics(); window.updateNutritionUI(); window.updateUIVisibility(); document.getElementById('ekg_input') && window.updateEKG(); clearError(); document.querySelectorAll('.score-card .text-3xl').forEach(el => el.textContent = '-');
+    };
+
+    window.updatePropofol = () => {
+        const w = getVal('weight'), d = getVal('propo_dose'), c = getVal('propo_conc') || 0.1, mE = document.getElementById('calc_propo_ml'), kE = document.getElementById('calc_propo_kcal');
+        let mHr = (w>0 && d>0) ? (d*w*60/1000)*c : null;
+        mE && (mE.textContent = mHr!==null ? mHr.toFixed(1) : '-'); kE && (kE.textContent = mHr!==null ? `${(mHr*1.1*24).toFixed(0)} (${(mHr*1.1).toFixed(1)})` : '-');
+    };
+
+    window.updateSmartInsulin = (e) => {
+        const cM = { 'ayuno': 'ent_comment_fasting', 'vo': 'ent_comment_oral', 'enteral': 'ent_comment', 'parenteral': 'ent_comment_paren' }, sel = document.getElementById('nutri_route');
+        let v = document.getElementById(cM[sel?.value])?.value || '', rN = null;
+        
+        (e?.target?.tagName === 'INPUT') && (
+            v = e.target.value,
+            Object.values(cM).forEach(id => id !== e.target.id && document.getElementById(id) && (document.getElementById(id).value = v)),
+            rN = /\b(npo|fasting|ayuno)\b/i.test(v) ? 'ayuno' : /\b(sng|sog|enteral)\b/i.test(v) ? 'enteral' : /\b(npt|tpn|parenteral)\b/i.test(v) ? 'parenteral' : /\b(vo|oral)\b/i.test(v) ? 'vo' : null,
+            (rN && sel.value !== rN) && (sel.value = rN, window.updateNutritionUI(), document.getElementById(cM[rN])?.focus(), document.getElementById(cM[rN])?.setSelectionRange(v.length, v.length))
+        );
+
+        let s = 0, a = [];
+        (v.match(/alg(?:oritmo)?\.?\s*(i{1,3}|\d+)/gi) || []).forEach(x => { let c = x.replace(/alg(?:oritmo)?\.?\s*/i, '').toUpperCase(); !a.includes(`IV (Alg ${c})`) && a.push(`IV (Alg ${c})`); });
+
+        let m; const rI = /(?:insulina|glargina|nph|lispro|aspart|glulisina|rapida|regular|detemir|degludec|toujeo|lantus|humalog|novolin|tresiba)\s+(\d+(?:-\d+)*)(?:\s*(?:ui|u))?/gi;
+        while ((m = rI.exec(v)) !== null) m[1] && m[1].split('-').forEach(n => s += (+n || 0));
+
+        let rs = [s > 0 ? `${s} UI (SQ)` : '', ...a].filter(Boolean), tE = document.getElementById('smart_insulin_total');
+        tE && (tE.textContent = rs.length ? rs.join(' + ') : '-');
+    };
+
+    window.toggleIntenseMode = (skipSave = !1) => {
+        isIntenseMode = !isIntenseMode; document.body.classList[isIntenseMode?'add':'remove']('intense-active');
+        const b = document.getElementById('intense_mode_btn'); b && (b.textContent = isIntenseMode?'🩺':'🧮');
+        
+        if (isIntenseMode && document.getElementById('select-preop')?.checked) {
+            let ekgT = document.getElementById('ekg_analysis_toggle');
+            if(ekgT && !ekgT.checked) { ekgT.checked = !0; document.getElementById('ekg_container')?.classList.remove('hidden'); window.updateEKG(); }
+        }
+        !skipSave && localStorage.setItem('intenseMode', isIntenseMode);
+    };
+
+    window.calcNews2 = d => {
+        let s = 0, o2 = (d.vent || d.fio2_pct > 21);
+        if (d.rr !== null) s += d.rr<=8?3 : d.rr>=25?3 : d.rr>=21?2 : d.rr>=9&&d.rr<=11?1 : 0;
+        s += o2?2:0;
+        if (d.spo2 !== null) {
+            if(d.hypercapnic) { if(d.spo2<=83)s+=3; else if(d.spo2<=85)s+=2; else if(d.spo2<=87)s+=1; else if(d.spo2<=92)s+=0; else if(d.spo2>=93 && o2)s+=(d.spo2>=97?3:d.spo2>=95?2:1); }
+            else { if(d.spo2<=91)s+=3; else if(d.spo2<=93)s+=2; else if(d.spo2<=95)s+=1; }
+        }
+        if (d.sbp !== null) s += d.sbp<=90?3 : d.sbp<=100?2 : d.sbp<=110?1 : d.sbp>=220?3 : 0;
+        if (d.hr !== null) s += d.hr<=40?3 : d.hr<=50?1 : d.hr>=131?3 : d.hr>=111?2 : d.hr>=91?1 : 0;
+        s += (!d.conscious || d.conscious==='Alert')?0:3;
+        if (d.temp !== null) s += d.temp<=35?3 : d.temp<=36?1 : d.temp>=39.1?2 : d.temp>=38.1?1 : 0;
+        return s;
+    };
+    
+    window.calcSofa2 = d => {
+        let s = 0, pafi = (d.pao2 && d.fio2_pct) ? d.pao2/(d.fio2_pct/100) : null;
+        if(document.getElementById('mech_cv_support')?.checked) s += 4;
+        else if(pafi !== null) s += pafi<75?4 : pafi<150?3 : pafi<225?2 : pafi<300?1 : 0;
+        if (d.plat !== null) s += d.plat<50?4 : d.plat<80?3 : d.plat<100?2 : d.plat<150?1 : 0;
+        if (d.bil !== null) s += d.bil>=12?4 : d.bil>=6?3 : d.bil>=3?2 : d.bil>=1.2?1 : 0;
+        let vaso_sum = (d.dose_ne || 0) + (d.dose_epi || 0), num_pressors = [d.dose_ne>0, d.dose_epi>0, d.dose_vaso>0, d.dose_dopa>0, d.dose_phenyl>0].filter(Boolean).length;
+        let map = (d.sbp !== null && d.dbp !== null) ? (d.sbp+2*d.dbp)/3 : null;
+        if(document.getElementById('mech_cv_support')?.checked) s += 4;
+        else if(vaso_sum>0.4 || num_pressors>=2) s += 4;
+        else if(vaso_sum>=0.2 && vaso_sum<=0.4) s += 3;
+        else if((vaso_sum>0 && vaso_sum<0.2) || document.getElementById('inotrope_support')?.checked) s += 2;
+        else if(map !== null && map<70) s += 1;
+        let gcs_pts = 0;
+        if (d.gcs !== null) gcs_pts = d.gcs<6?4 : d.gcs<10?3 : d.gcs<13?2 : d.gcs<15?1 : 0;
+        if(document.getElementById('delirium_drugs')?.checked) gcs_pts = Math.max(gcs_pts, 2); 
+        s += gcs_pts;
+        
+        let kdigo = document.getElementById('kdigo_stage')?.value;
+        if(document.getElementById('rrt_modality')?.value !== "") s += 4;
+        else if(kdigo === 'III' || (d.cr !== null && d.cr>=3.0)) s += 3;
+        else if(kdigo === 'II' || (d.cr !== null && d.cr>=2.0)) s += 2;
+        else if(kdigo === 'I' || (d.cr !== null && d.cr>=1.5)) s += 1;
+        return s;
+    };
+
+    window.calcSaps2 = d => {
+        let s = 0, pafi = (d.pao2 && d.fio2_pct) ? d.pao2/(d.fio2_pct/100) : null;
+        if (d.age !== null) s += d.age>=80?18 : d.age>=75?16 : d.age>=70?15 : d.age>=60?12 : d.age>=40?7 : 0;
+        if (d.hr !== null) s += d.hr>=160?7 : d.hr>=120?4 : d.hr<40?11 : d.hr<70?2 : 0;
+        if (d.sbp !== null) s += d.sbp>=200?2 : d.sbp<70?13 : d.sbp<100?5 : 0;
+        if (d.temp !== null) s += d.temp>=39?3 : 0;
+        if(d.vent && pafi !== null) s += pafi<100?11 : pafi<200?9 : pafi<400?6 : 0;
+        if (d.uo !== null) s += d.uo<500?11 : d.uo<1000?4 : 0;
+        if (d.bun !== null) s += d.bun>=84?10 : d.bun>=28?6 : 0;
+        if (d.wbc !== null) s += d.wbc>=20?3 : d.wbc<1?12 : 0;
+        if (d.k !== null) s += d.k>=5?3 : d.k<3?3 : 0;
+        if (d.na !== null) s += d.na>=145?1 : d.na<125?5 : 0;
+        if (d.bicarb !== null) s += d.bicarb<15?6 : d.bicarb<20?3 : 0;
+        if (d.bil !== null) s += d.bil>=6?9 : d.bil>=4?4 : 0;
+        if (d.gcs !== null) s += d.gcs<6?26 : d.gcs<9?13 : d.gcs<11?7 : d.gcs<14?5 : 0;
+        s += d.chr_aids?17 : d.chr_hema?10 : d.chr_meta?9 : 0;
+        s += d.admissionType==='Emergency Surgical'?8 : d.admissionType==='Medical'?6 : 0;
+        return s;
+    };
+
+    window.calcApache = d => {
+        let s = 0, map = (d.sbp !== null && d.dbp !== null) ? (d.sbp+2*d.dbp)/3 : null;
+        if (d.age !== null) s += d.age>=75?6 : d.age>=65?5 : d.age>=55?3 : d.age>=45?2 : 0;
+        if (d.temp !== null) s += d.temp>=41?4 : d.temp>=39?3 : d.temp>=38.5?1 : d.temp<30?4 : d.temp<32?3 : d.temp<34?2 : d.temp<36?1 : 0;
+        if (map !== null) s += map>=160?4 : map>=130?3 : map>=110?2 : map<50?4 : map<70?2 : 0;
+        if (d.hr !== null) s += d.hr>=180?4 : d.hr>=140?3 : d.hr>=110?2 : d.hr<40?4 : d.hr<55?3 : d.hr<70?2 : 0;
+        if (d.rr !== null) s += d.rr>=50?4 : d.rr>=35?3 : d.rr>=25?1 : d.rr<6?4 : d.rr<10?2 : d.rr<12?1 : 0;
+        if (d.fio2_pct>=50 && d.pao2 !== null && d.paco2 !== null) { let grad = (((d.fio2_pct/100)*(d.pb?d.pb-47:713))-(d.paco2/0.8))-d.pao2; s += grad>=500?4 : grad>=350?3 : grad>=200?2 : 0; } 
+        else if (d.fio2_pct<50 && d.pao2 !== null) { s += d.pao2>70?0 : d.pao2>60?1 : d.pao2>=55?3 : 4; }
+        if (d.ph !== null) s += d.ph>=7.7?4 : d.ph>=7.6?3 : d.ph>=7.5?1 : d.ph<7.15?4 : d.ph<7.25?3 : d.ph<7.33?2 : 0;
+        if (d.na !== null) s += d.na>=180?4 : d.na>=160?3 : d.na>=155?2 : d.na>=150?1 : d.na<=110?4 : d.na<=119?3 : d.na<=129?2 : 0;
+        if (d.k !== null) s += d.k>=7?4 : d.k>=6?3 : d.k>=5.5?1 : d.k<2.5?4 : d.k<3?2 : d.k<3.5?1 : 0;
+        if (d.cr !== null) { let pts = d.cr>=3.5?4 : d.cr>=1.5?3 : d.cr<0.6?2 : 0; s += d.arf ? pts*2 : pts; }
+        if (d.hct !== null) s += d.hct>=60?4 : d.hct>=50?2 : d.hct>=46?1 : d.hct<20?4 : d.hct<30?2 : 0;
+        if (d.wbc !== null) s += d.wbc>=40?4 : d.wbc>=20?2 : d.wbc>=15?1 : d.wbc<1?4 : d.wbc<3?2 : 0;
+        if (d.gcs !== null) s += 15 - d.gcs;
+        if (d.chr_cirr || d.chr_nyha || d.chr_lung || d.chr_ckd || d.chr_aids || d.chr_meta || d.chr_hema) { s += d.admissionType === 'Scheduled Surgical' ? 2 : 5; }
+        return s;
+    };
+
+    window.setSex = val => {
+        document.getElementById('sex').value = val;
+        document.getElementById('sex-male').classList.toggle('active', val === 'Male');
+        document.getElementById('sex-female').classList.toggle('active', val === 'Female');
+        window.updatePatientSummary(); window.updatePhysiology(); 
+    };
+
+    window.toggleHeightMode = () => {
+        isUlnaMode = !isUlnaMode;
+        document.getElementById('height_toggle_btn').textContent = isUlnaMode ? 'Ulnar Lgt (cm)' : 'Height (cm)';
+        window.updatePatientSummary(); window.updatePhysiology(); 
+    };
+
+    window.toggleNutritionTarget = () => {
+        isProteinTarget = !isProteinTarget;
+        document.getElementById('ent_target_btn').textContent = isProteinTarget ? 'Target (g/kg/d)' : 'Target (kcal/kg/d)';
+        window.updateNutrition();
+    };
+
+    window.updateNutritionUI = () => {
+        const r = document.getElementById('nutri_route')?.value;
+        let t = (i, v) => document.getElementById(i)?.classList.toggle('hidden', r !== v);
+        t('nutri_view_fasting', 'ayuno'); t('nutri_view_oral', 'vo'); t('nutri_view_enteral', 'enteral'); t('nutri_view_parenteral', 'parenteral');
+        window.updateSmartInsulin();
+    };
+
+    window.toggleDarkMode = () => {
+        const d = document.documentElement.classList.toggle('dark-theme');
+        document.getElementById('dark_mode_btn').textContent = d ? '☀️' : '🌙';
+        try { localStorage.setItem('theme', d ? 'dark' : 'light'); } catch(e){}
+    };
+
+    window.updatePhysiology = () => {
+        const v = id => getVal(id), t = (id, text) => { const el = document.getElementById(id); el && (el.innerHTML = text !== null ? text : '-'); };
+        const sbp = v('sbp'), dbp = v('dbp'), hr = v('hr'), rr = v('rr');
+        t('calculatedMap', (sbp>0 && dbp>0) ? Math.round((sbp+2*dbp)/3) : null);
+        t('calculatedSI', (sbp>0 && hr>0) ? (hr/sbp).toFixed(2) : null);
+        t('calculatedRASI', (sbp>0 && hr>0 && rr>0) ? ((hr/sbp)*(rr/10)).toFixed(2) : null);
+        const nee = (v('dose_ne')||0) + (v('dose_epi')||0) + ((v('dose_dopa')||0)/100) + ((v('dose_phenyl')||0)/10) + ((v('dose_vaso')||0)*2.5);
+        t('calculatedNEE', nee.toFixed(2));
+        const pao2 = v('pao2'), paco2 = v('paco2'), spo2 = v('spo2'), fio2 = v('fio2')||21, pb = v('pb')||740;
+        t('calculatedAaGradient', (pao2 && paco2) ? Math.round((((fio2/100)*(pb-47))-(paco2/0.8))-pao2) : null);
+        t('calculatedPaFi', (pao2 && fio2>0) ? Math.round(pao2/(fio2/100)) : null);
+        t('calculatedSaFi', (spo2 && fio2>0) ? Math.round(spo2/(fio2/100)) : null);
+        const uo = v('urineOutput'), hrs = v('uoHours'), w = v('weight'), age = v('age'), cr = v('creatinine'), sex = document.getElementById('sex')?.value;
+        t('calculated24hUO', (uo>0 && hrs>0) ? Math.round((uo/hrs)*24) : null);
+        t('calculatedUIndex', (uo>0 && hrs>0 && w>0) ? ((uo/hrs)/w).toFixed(2) : null);
+        let crcl = null, egfr = null;
+        if(age>0 && w>0 && cr>0 && sex) {
+            crcl = ((140-age)*w)/(72*cr); if(sex==='Female') crcl *= 0.85;
+            const k = sex === 'Female' ? 0.7 : 0.9, a = sex === 'Female' ? -0.241 : -0.302, f = sex === 'Female' ? 1.012 : 1;
+            egfr = 142 * Math.pow(Math.min(cr/k,1), a) * Math.pow(Math.max(cr/k,1), -1.2) * Math.pow(0.9938, age) * f;
+        }
+        t('calculatedCrCl', crcl ? crcl.toFixed(1) : null); t('calculatedEGFR', egfr ? Math.round(egfr) : null);
+        const fIn = v('fluid_in'), fOut = v('fluid_out');
+        t('calc_balance', (fIn!==null && fOut!==null) ? ((fIn-fOut > 0 ? '+' : '') + +(fIn-fOut).toFixed(2)) : null);
+        const alt = v('alt_lab'), fa = v('fa_lab');
+        t('calc_r_factor', (alt !== null && fa !== null && fa > 0) ? ((alt / 40) / (fa / 120)).toFixed(2) : '-');
+    };
+
+    window.parseEKGText = () => {
+        let t = document.getElementById('ekg_input')?.value.toUpperCase() || '', s = (id, v) => v && (document.getElementById(id).value = v);
+        let cM = (r) => { let x = t.match(r); return x ? (parseFloat(x[1]) * (/(CG|BQ)/i.test(x[2]||'') ? 5 : 1)) : null; };
+        
+        let rBtn = document.getElementById('ekg_rit_btn');
+        if(/\b(IRREG|IRR)\b/i.test(t) && rBtn.textContent.includes('Regular')) window.toggleEKGRhythm(true);
+        else if(/\b(REG)\b/i.test(t) && rBtn.textContent.includes('Irregular')) window.toggleEKGRhythm(false);
+        
+        let isIrreg = document.getElementById('ekg_rit').value === 'irreg';
+        
+        const params = [
+            { id: 'ekg_d1', rx: /DI\s*([+-]?\d+(?:\.\d+)?)/i }, { id: 'ekg_avf', rx: /AVF\s*([+-]?\d+(?:\.\d+)?)/i },
+            { id: 'ekg_pr', rx: /PR\s*(\d+(?:\.\d+)?)\s*(MM|CP|SQ|CG|BQ)?/i }, { id: 'ekg_qrs', rx: /QRS\s*(\d+(?:\.\d+)?)\s*(MM|CP|SQ|CG|BQ)?/i },
+            { id: 'ekg_qt', rx: /QT\s*(?:\([^)]+\)\s*)?(\d+(?:\.\d+)?)\s*(MM|CP|SQ|CG|BQ)?/i }
+        ];
+        params.forEach(p => s(p.id, cM(p.rx)));
+
+        isIrreg ? (s('ekg_qrs_10s', cM(/(\d+)\s*(?:RS|QRS)/i)), s('ekg_rr_min', cM(/MIN\s*(\d+(?:\.\d+)?)/i)), s('ekg_rr_max', cM(/MAX\s*(\d+(?:\.\d+)?)/i))) 
+                : s('ekg_rr_val', cM(/RR\s*(\d+(?:\.\d+)?)\s*(MM|CP|SQ|CG|BQ)?/i));
+        
+        let f = t.match(/(FRD|FRM|HOD|HDG)/i); f && s('ekg_qtc_form', f[1].includes('FRD')?'frd':f[1].includes('FRM')?'frm':'hod');
+        window.updateEKG();
+    };
+
+    window.toggleEKGRhythm = (forceIrreg = null) => {
+        let btn = document.getElementById('ekg_rit_btn'), inp = document.getElementById('ekg_rit'), grid = document.getElementById('ekg_grid_dinamico');
+        let isIrreg = forceIrreg !== null ? forceIrreg : inp.value === 'reg';
+        
+        inp.value = isIrreg ? 'irreg' : 'reg';
+        btn.textContent = isIrreg ? 'Irregular!' : 'Regular?';
+        btn.className = isIrreg ? 'w-full py-2 text-xs font-black uppercase bg-red-600 border-2 border-red-600 text-white rounded-lg shadow-md transition-colors tracking-widest' : 'w-full py-2 text-xs font-black uppercase bg-white border-2 border-red-200 text-red-600 rounded-lg shadow-sm transition-colors tracking-widest';
+        
+        document.querySelectorAll('.irr-only').forEach(e => e.classList.toggle('hidden', !isIrreg));
+        document.querySelectorAll('.reg-only').forEach(e => e.classList.toggle('hidden', isIrreg));
+        
+        grid.className = isIrreg ? 'grid grid-cols-1 md:grid-cols-4 gap-2 items-end' : 'grid grid-cols-1 md:grid-cols-3 gap-2 items-end';
+        window.updateEKG();
+    };
+
+    window.updateGCS = () => {
+        const e = getVal('gcs_eye', !0), v = getVal('gcs_verbal', !0), m = getVal('gcs_motor', !0), g = document.getElementById('gcs');
+        if (e !== null && v !== null && m !== null && g) g.value = e + v + m;
+    };
+
+    window.updateNeuroScore = () => {
+        const s = document.getElementById('use_sedation'), i = document.getElementById('neuro_score_input');
+        if(!s || !i) return;
+        if(s.checked) { const r = document.getElementById('rass_score').value; r !== "" && (i.value = `RASS: ${r}`); }
+        else { const e=getVal('four_eye',!0), m=getVal('four_motor',!0), b=getVal('four_brainstem',!0), r=getVal('four_resp',!0); (e!==null && m!==null && b!==null && r!==null) && (i.value = `FOUR: ${e+m+b+r}`); }
+    };
+
+    window.updatePainScore = () => {
+        const s = document.getElementById('pain_scale_selector')?.value, v = id => getVal(id, !0), t = document.getElementById('pain_score_total');
+        let sc = null, a,b,c,d,e;
+        if(s==='evn') sc = v('pain_evn_val');
+        else if(s==='bps') { a=v('bps_face'),b=v('bps_limbs'),c=v('bps_vent'); if(a!==null&&b!==null&&c!==null) sc=a+b+c; }
+        else if(s==='cpot') { a=v('cpot_face'),b=v('cpot_body'),c=v('cpot_muscle'),d=v('cpot_vent'); if(a!==null&&b!==null&&c!==null&&d!==null) sc=a+b+c+d; }
+        else if(s==='nvps') { a=v('nvps_face'),b=v('nvps_act'),c=v('nvps_guard'),d=v('nvps_phys1'),e=v('nvps_phys2'); if(a!==null&&b!==null&&c!==null&&d!==null&&e!==null) sc=a+b+c+d+e; }
+        t && (t.value = sc !== null ? sc : '');
+    };
+
+    window.updateEKG = () => {
+        let r = document.getElementById('ekg_rit')?.value;
+        let rr = r === 'irreg' ? getVal('ekg_qrs_10s') : getVal('ekg_rr_val');
+        let mn = getVal('ekg_rr_min'), mx = getVal('ekg_rr_max'), t = (i,v)=>document.getElementById(i)&&(document.getElementById(i).innerHTML=v);
+        let hr = null, hrS = '-', rrS = null;
+        
+        if (r === 'irreg' && rr>0) { 
+            hr = rr*6; 
+            rrS = 60/hr; 
+            hrS = `~${hr} <span class="text-[9px] text-red-600">bpm</span> <span class="text-[9px] text-slate-500 block leading-tight mt-0.5">(${(mx>0?Math.round(1500/mx):'?')} - ${(mn>0?Math.round(1500/mn):'?')})</span>`; 
+        } 
+        else if (rr>0) { 
+            hr = Math.round(1500/rr); 
+            rrS = (rr*40)/1000; 
+            hrS = `${hr} <span class="text-[9px] text-red-600">bpm</span>`; 
+        }
+        t('calc_ekg_hr', hrS);
+
+        let d1 = getVal('ekg_d1',!0), av = getVal('ekg_avf',!0); t('calc_ekg_axis', d1!==null&&av!==null ? `${Math.round(Math.atan2(av,d1)*(180/Math.PI))}°` : '-');
+        let pr = getVal('ekg_pr'), qrs = getVal('ekg_qrs'), qt = getVal('ekg_qt'), f = document.getElementById('ekg_qtc_form')?.value || 'frd';
+        t('calc_ekg_pr', pr>0?`${pr*40} <span class="text-[9px]">ms</span>`:'-'); t('calc_ekg_qrs', qrs>0?`${qrs*40} <span class="text-[9px]">ms</span>`:'-'); t('calc_ekg_qt', qt>0?`${qt*40} <span class="text-[9px]">ms</span>`:'-');
+
+        let qtc = '-';
+        if(qt>0 && rrS>0) { let qM = qt*40, v = f==='frd'?qM/Math.cbrt(rrS) : f==='frm'?qM+0.154*(1-rrS)*1000 : qM+1.75*((60/rrS)-60); qtc = `${Math.round(v)} <span class="text-[9px]">ms</span>`; }
+        t('calc_ekg_qtc', qtc);
+    };
+
+    window.updateNutrition = (fR = !1) => {
+        let cal = getVal('ent_cal'), prot = getVal('ent_prot'), w = getVal('weight'), tI = document.getElementById('ent_target'), rI = document.getElementById('diet_rate');
+        let tgt = parseFloat(tI?.value||0), rt = parseFloat(rI?.value||0), bmi = parseFloat(document.getElementById('summary-bmi')?.textContent), ibw = parseFloat(document.getElementById('summary-ibw')?.textContent);
+        let wC = w, wP = w, t = (i,v)=>document.getElementById(i)&&(document.getElementById(i).innerHTML=v);
+        
+        (!isNaN(bmi) && w>0 && !isNaN(ibw) && ibw>0) ? (
+            bmi<18.5 ? (wC=(ibw+w)/2, wP=w) : 
+            bmi>=30&&bmi<=50 ? (wC=w, wP=ibw) : 
+            bmi>50 && (wC=ibw, wP=ibw),
+            t('summary-nutribw', `${+wC.toFixed(1)} / ${+wP.toFixed(1)}`)
+        ) : t('summary-nutribw', '-');
+
+        let cD = null, pD = null, fRt = null;
+        (wC>0 && wP>0) && (
+            fR && rt>0 ? (
+                cal>0 && (cD=(rt*24*cal)/wC), prot>0 && (pD=(rt*24*prot)/wP),
+                tI && (!isProteinTarget && cD!==null ? tI.value=+cD.toFixed(1) : isProteinTarget && pD!==null && (tI.value=+pD.toFixed(2)))
+            ) : !fR && tgt>0 && (
+                isProteinTarget && prot>0 ? (fRt=(tgt*wP)/prot/24, pD=tgt, cal>0&&(cD=(fRt*24*cal)/wC)) : 
+                !isProteinTarget && cal>0 && (fRt=(tgt*wC)/cal/24, cD=tgt, prot>0&&(pD=(fRt*24*prot)/wP)),
+                rI && fRt!==null && (rI.value=+fRt.toFixed(1))
+            )
+        );
+        t('summary-cal-d', cD!==null?+cD.toFixed(1):'-'); 
+        t('summary-prot-d', pD!==null?+pD.toFixed(2):'-');
+
+        const r = document.getElementById('nutri_route')?.value, sTx = document.getElementById('sedation_drugs')?.value || '', isP = document.getElementById('use_sedation')?.checked && /\b(propo|propofol)\b/i.test(sTx), pBx = document.getElementById('propofol_calc_container'), sP = isP && (r==='enteral'||r==='parenteral');
+        if(pBx) {
+            pBx.classList.toggle('hidden', !sP);
+            if(sP) {
+                let m = sTx.match(/(?:propo|propofol)\s*(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)\s*(?:propo|propofol)/i), dI = document.getElementById('propo_dose');
+                m && dI && !dI.value && (dI.value = m[1]||m[2]);
+                window.updatePropofol();
+            }
+        }
+    };
+
+    window.updatePatientSummary = () => {
+        let eH = null, w = getVal('weight'), h = getVal('height_input'), s = document.getElementById('sex')?.value, t = (i, v) => { document.getElementById(i)&&(document.getElementById(i).innerHTML=v) };
+        t('summary-height-label', isUlnaMode ? 'Estim. Height (cm)' : 'Height (cm)');
+        isUlnaMode ? (eH = (h>0 && s) ? (s==='Male'?85.61+(3.16*h) : 85.80+(2.97*h)) : null, t('summary-height', eH?+eH.toFixed(1):'-')) : (eH = h, t('summary-height', h?+Number(h).toFixed(1):'-'));
+        t('summary-weight', w?+Number(w).toFixed(1):'-');
+        if(w>0 && eH>0) {
+            let bmi = w/((eH/100)**2); t('summary-bmi', +bmi.toFixed(1));
+            if(s) {
+                let ibw = (s==='Male'?50:45.5)+(0.91*(eH-152.4)), isU = bmi < 18.5, g = document.getElementById('ibw_vt_grid');
+                t('summary-ibw', +ibw.toFixed(1));
+                
+                let dC = document.getElementById('dyn_corrbw');
+g && (g.className = `grid gap-2 border-b border-slate-50 pb-2 transition-all ${isU ? 'grid-cols-3' : 'grid-cols-2'}`, dC && (dC.innerHTML = isU ? `<div><span class="adv-lbl">Corr.BW (<18.5)</span><span class="adv-val text-indigo-600">${+((ibw+w)/2).toFixed(1)}</span></div>` : ''));
+                
+                let lbw = s === 'Male' ? (9270 * w) / (6680 + (216 * bmi)) : (9270 * w) / (8780 + (244 * bmi));
+                t('summary-lbw', +lbw.toFixed(1));
+            } else { ['summary-ibw','summary-lbw'].forEach(x=>t(x,'-')); document.getElementById('dyn_corrbw').innerHTML = ''; }
+        } else { ['summary-bmi','summary-ibw','summary-lbw'].forEach(x=>t(x,'-')); dC && (dC.innerHTML = ''); }
+    };
+
+    window.updateRespiratoryMechanics = () => {
+        const mode = document.getElementById('vent_mode_internal')?.value, vt = getVal('vent_vt'), peep = getVal('vent_peep'), pip = getVal('vent_pip'), pplat = getVal('vent_pplat'), flow = getVal('vent_flow'), rr = getVal('rr');
+        const pG = document.getElementById('vent_params_grid'), adv = document.getElementById('advanced_mech_container'), wC = document.getElementById('weaning_container'), rC = document.getElementById('rox_container'), hC = document.getElementById('hacor_container');
+        const cP = document.getElementById('col_vent_pplat'), cT = document.getElementById('col_vent_ti'), cI = document.getElementById('col_vent_ie'), cM = document.getElementById('col_vent_mv'), lV = document.getElementById('lbl_vent_vt');
+
+        if (!adv || !wC) return;
+        pG && pG.classList.remove('hidden'); adv.classList.add('hidden'); wC.classList.add('hidden'); rC && rC.classList.add('hidden'); hC && hC.classList.add('hidden');
+        const fI = document.getElementById('vent_flow');
+        fI && (fI.disabled = (mode === 'PCV' || mode === 'PSV'), fI.classList.toggle('opacity-50', mode === 'PCV' || mode === 'PSV'), fI.classList.toggle('cursor-not-allowed', mode === 'PCV' || mode === 'PSV'));
+
+        if (mode === 'CNAF') {
+            pG && pG.classList.add('hidden'); rC && rC.classList.remove('hidden');
+            const sf = parseFloat(document.getElementById('calculatedSaFi')?.textContent), rR = document.getElementById('rox_risk');
+            if (rC) {
+                const rv = (!isNaN(sf) && rr > 0) ? (sf / rr).toFixed(2) : '-'; document.getElementById('calc_rox').textContent = rv;
+                rR && (!isNaN(parseFloat(rv)) ? (rR.textContent = parseFloat(rv) >= 4.88 ? 'Low failure risk' : parseFloat(rv) >= 3.85 ? 'Reevaluate in 1-2 hrs' : 'High failure risk') : rR.textContent = '');
+            }
+        } else if (mode === 'NIV') {
+            pG && pG.classList.add('hidden'); hC && hC.classList.remove('hidden');
+            const hr = getVal('hr'), ph = getVal('ph'), gcs = getVal('gcs', !0), pao2 = getVal('pao2'), spo2 = getVal('spo2');
+            let pf = parseFloat(document.getElementById('calculatedPaFi')?.textContent);
+            isNaN(pf) && pao2 === null && spo2 !== null && spo2 <= 97 && (pf = (parseFloat(document.getElementById('calculatedSaFi')?.textContent) - 64) / 0.84);
+
+            if (hr > 0 && ph > 0 && gcs > 0 && !isNaN(pf) && rr > 0) {
+                let h = (hr >= 121 ? 1 : 0) + (ph < 7.25 ? 4 : ph < 7.30 ? 3 : ph < 7.35 ? 2 : 0) + (gcs >= 15 ? 0 : gcs >= 13 ? 2 : gcs >= 11 ? 5 : 10) + (pf <= 100 ? 6 : pf <= 125 ? 5 : pf <= 150 ? 4 : pf <= 175 ? 3 : pf <= 200 ? 2 : 0) + (rr >= 30 ? 1 : 0);
+                hC && (document.getElementById('calc_hacor').textContent = h, document.getElementById('hacor_risk').textContent = h > 5 ? '>5: High Failure Risk' : '<=5: Low Risk');
+            } else hC && (document.getElementById('calc_hacor').textContent = '-', document.getElementById('hacor_risk').textContent = 'Pending Data');
+        } else if (mode === 'VCV' || mode === 'PCV') {
+            pG && (pG.classList.remove('md:grid-cols-4', 'grid-cols-2'), pG.classList.add('md:grid-cols-6', 'grid-cols-3'));
+            lV && (lV.textContent = mode === 'PCV' ? 'VT~' : 'VT');
+            cP && cP.classList.remove('hidden'); cT && cT.classList.remove('hidden'); cI && cI.classList.remove('hidden'); cM && cM.classList.add('hidden');
+            adv.classList.remove('hidden'); wC.classList.add('hidden'); let dp = null;
+            document.getElementById('calc_dp').innerHTML = (pplat !== null && peep !== null) ? `${dp = pplat - peep} <span class="text-xs font-bold">cmH₂O</span>` : '-';
+            document.getElementById('calc_mp').innerHTML = (rr > 0 && vt > 0) ? `${(mode === 'VCV' && pip !== null && dp !== null ? 0.098 * rr * (vt / 1000) * (pip - (0.5 * dp)) : mode === 'PCV' && peep !== null && dp !== null ? 0.098 * rr * (vt / 1000) * (peep + dp) : null)?.toFixed(1) || '-'} <span class="text-xs font-bold">J/min</span>` : '-';
+            document.getElementById('calc_cstat').innerHTML = (vt > 0 && dp !== null && dp > 0) ? `${(vt / dp).toFixed(1)} <span class="text-xs font-bold">ml/cmH₂O</span>` : '-';
+        } else if (mode === 'PSV') {
+            pG && (pG.classList.remove('md:grid-cols-6', 'grid-cols-3'), pG.classList.add('md:grid-cols-4', 'grid-cols-2'));
+            lV && (lV.textContent = 'VT (esp)');
+            cP && cP.classList.add('hidden'); cT && cT.classList.add('hidden'); cI && cI.classList.add('hidden'); cM && cM.classList.remove('hidden');
+            adv.classList.add('hidden'); wC.classList.remove('hidden'); let dp = null, cdyn_mp = null;
+            
+            document.getElementById('calc_rsbi').innerHTML = (rr > 0 && vt > 0) ? `${Math.round(rr / (vt / 1000))} <span class="text-[9px] font-bold">rpm/L</span>` : '-';
+            document.getElementById('calc_mv').textContent = (rr > 0 && vt > 0) ? ((vt / 1000) * rr).toFixed(1) : '-';
+            document.getElementById('calc_psv_dp').innerHTML = (pip !== null && peep !== null) ? `${(dp = pip - peep).toFixed(1)} <span class="text-[9px] font-bold">cmH₂O</span>` : '-';
+            document.getElementById('calc_psv_cdyn').innerHTML = (vt > 0 && dp > 0) ? `${(vt / dp).toFixed(1)} <span class="text-[9px] font-bold">ml/cmH₂O</span>` : '-';
+            document.getElementById('calc_psv_mp').innerHTML = (rr > 0 && vt > 0 && pip !== null) ? `${(0.098 * rr * (vt / 1000) * pip).toFixed(1)} <span class="text-[9px] font-bold">J/min</span>` : '-';
+            
+            let cR = document.getElementById('cdyn_mp_risk'), cC = document.getElementById('calc_cdyn_mp');
+            if (rr > 0 && pip !== null && dp > 0) {
+                cdyn_mp = rr * pip * dp; cC.textContent = Math.round(cdyn_mp);
+                let lvl = cdyn_mp < 4000 ? ['Low Risk', 'green-500'] : cdyn_mp <= 5000 ? ['Intermediate', 'yellow-500'] : ['High Risk', 'red-500'];
+                cR.textContent = `Weaning risk (${lvl[0]})`; cR.className = `text-[9px] font-bold uppercase text-${lvl[1]}`; cC.className = `text-2xl font-black text-${lvl[1]}`;
+            } else { cC.textContent = '-'; cR.textContent = 'Weaning Risk (Pending)'; cR.className = 'text-[9px] font-bold text-slate-500 capitalize'; cC.className = 'text-2xl font-black text-teal-600'; }
+
+            const d_mv = getVal('days_mv'), gcs = getVal('gcs', !0), mrc = getVal('mrc_score'), hct = getVal('hct'), cr = getVal('creatinine'), nC = document.getElementById('neuro_comorb')?.checked;
+            if ((rr > 0 && vt > 0) && (vt > 0 && dp > 0) && d_mv !== null && gcs !== null && mrc !== null && hct !== null && cr !== null) {
+                let sx = 0, rsbi = rr / (vt / 1000), cdyn = vt / dp;
+                sx += rsbi <= 42 ? 25 : rsbi <= 54 ? 20 : rsbi <= 76 ? 10 : rsbi <= 90 ? 5 : 0;
+                sx += cdyn >= 63 ? 15 : cdyn >= 51 ? 10 : cdyn >= 43 ? 7 : cdyn >= 32 ? 3 : 0;
+                sx += d_mv <= 3 ? 10 : d_mv <= 5 ? 7 : d_mv <= 8 ? 4 : d_mv <= 10 ? 1 : 0;
+                sx += gcs >= 14 ? 10 : gcs >= 12 ? 6 : gcs >= 9 ? 3 : 0;
+                sx += mrc >= 49 ? 10 : mrc >= 37 ? 7 : mrc >= 25 ? 4 : mrc >= 13 ? 1 : 0;
+                sx += hct >= 37 ? 10 : hct >= 32 ? 7 : hct >= 26 ? 3 : hct >= 22 ? 1 : 0;
+                sx += cr <= 0.99 ? 10 : cr <= 1.2 ? 7 : cr <= 1.5 ? 4 : cr <= 2.9 ? 1 : 0;
+                !nC && (sx += 10);
+                let lvl = sx >= 59 ? ["98.7%", "green-500"] : sx >= 45 ? ["88.3%", "yellow-500"] : ["57.1%", "red-500"];
+                document.getElementById('calc_expres').textContent = `${sx} (${lvl[0]})`; document.getElementById('calc_expres').className = `text-2xl font-black text-${lvl[1]}`;
+            } else {
+                document.getElementById('calc_expres').textContent = '-'; document.getElementById('calc_expres').className = 'text-2xl font-black text-teal-600';
+            }
+        } else { adv.classList.add('hidden'); wC.classList.add('hidden'); pG && (pG.classList.remove('md:grid-cols-4', 'grid-cols-2'), pG.classList.add('md:grid-cols-6', 'grid-cols-3')); lV && (lV.textContent = 'VT'); cP && cP.classList.remove('hidden'); cT && cT.classList.remove('hidden'); cI && cI.classList.remove('hidden'); cM && cM.classList.add('hidden'); }
+
+        let ti = (rr > 0 && flow !== null && flow > 0) ? (flow >= 5 && vt > 0 && mode === 'VCV' ? (vt * 60) / (flow * 1000) : flow >= 5 ? 0 : flow) : 0;
+        document.getElementById('calc_ie').textContent = ti > 0 ? ((60 / rr) - ti > 0 ? `1:${(((60 / rr) - ti) / ti).toFixed(1)}` : 'Inv') : '-';
+
+        const iT = document.getElementById('summary-ibw')?.textContent, vK = document.getElementById('summary-vt-kg');
+        vK && (vK.textContent = (vt > 0 && iT && iT !== '-' && iT !== '' && !isNaN(parseFloat(iT)) && parseFloat(iT) > 0) ? +(vt / parseFloat(iT)).toFixed(1) : '-');
+    };
+
+    window.updateUIVisibility = () => {
+        const d = getVal('select-daily') ?? !0, a = getVal('select-admission') ?? !1, p = getVal('select-preop') ?? !1;
+        Object.assign(activeScores, {news2: d||a, sofa: d||a, saps2: d, apache2: d||a, saps3: a, mpm0: a, preop: p});
+        const noS = !d && !a && !p, isPO = p && !d && !a, iBtn = document.getElementById('intense_mode_btn');
+        document.getElementById('no-scores-warning')?.classList.toggle('hidden', !noS); document.getElementById('calc_btn')?.classList.toggle('hidden', noS);
+        ['sec-labs', 'sec-neuro', 'sec-resp', 'sec-hemo', 'sec-enteral'].forEach(i => { let el = document.getElementById(i); el && (el.style.display = (isPO || noS) ? 'none' : ''); });
+        isPO ? (isIntenseMode && window.toggleIntenseMode(!0), iBtn?.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none')) : iBtn?.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+        
+        let sa = activeScores.saps3 || activeScores.mpm0;
+        document.querySelectorAll('.adm-expanded').forEach(e => e.classList.toggle('hidden', !sa));
+        document.querySelectorAll('.input-group').forEach(g => g.dataset.scores && !g.classList.contains('adm-expanded') && g.classList.toggle('hidden', !g.dataset.scores.split(',').some(s => activeScores[s])));
+        
+        // Dynamic re-order for generated cards
+        ['news2', 'sofa', 'saps2', 'apache2', 'saps3', 'mpm0', 'asa', 'rcri', 'mica', 'pospom'].forEach(s => {
+            const c = document.getElementById(`result-${s}`);
+            if(c) { let ac = ['asa','rcri','mica','pospom'].includes(s)?p:activeScores[s]; ac ? (c.classList.remove('opacity-40', 'grayscale'), c.style.order="1") : (c.classList.add('opacity-40', 'grayscale'), c.style.order="10"); }
+        });
+        document.getElementById('link-adm')?.classList.toggle('hidden', !sa); document.getElementById('link-preop')?.classList.toggle('hidden', !p);
+    };
+
+    window.checkMissingData = () => {
+        const sm = {'age':'sec-patient', 'weight':'sec-patient', 'height_input':'sec-patient', 'sex':'sec-patient', 'na':'sec-labs', 'k':'sec-labs', 'ph':'sec-labs', 'bicarb':'sec-labs', 'hct':'sec-labs', 'wbc':'sec-labs', 'platelets':'sec-labs', 'bilirubin':'sec-labs', 'admissionType':'sec-admission', 'icu_location':'sec-admission', 'hosp_days_before':'sec-admission', 'gcs':'sec-neuro', 'consciousness_level':'sec-neuro', 'rr':'sec-resp', 'spo2':'sec-resp', 'fio2':'sec-resp', 'sbp':'sec-hemo', 'dbp':'sec-hemo', 'hr':'sec-hemo', 'temp':'sec-hemo', 'creatinine':'sec-renal', 'bun':'sec-renal', 'urineOutput':'sec-renal', 'uoHours':'sec-renal', 'asa_class':'preop-block', 'functional_status':'preop-block', 'surgery_risk':'preop-block'};
+        let req = [], mSec = new Set(), mLab = [];
+        let nB = activeScores.news2 || activeScores.sofa || activeScores.saps2 || activeScores.apache2 || activeScores.saps3 || activeScores.mpm0;
+        let nL = activeScores.sofa || activeScores.saps2 || activeScores.apache2 || activeScores.saps3 || activeScores.mpm0;
+        nB && req.push('age', 'sex', 'temp', 'hr', 'sbp', 'dbp', 'rr', 'spo2', 'fio2', 'consciousness_level');
+        nL && req.push('na', 'k', 'bun', 'creatinine', 'wbc', 'hct', 'platelets', 'urineOutput', 'uoHours');
+        activeScores.preop && (!req.includes('asa_class') && req.push('asa_class', 'surgery_risk', 'functional_status'), !req.includes('age') && req.push('age'), !req.includes('creatinine') && req.push('creatinine'));
+        (activeScores.saps3 || activeScores.mpm0) && !req.includes('admissionType') && req.push('admissionType');
+
+        req.forEach(id => { let e = document.getElementById(id); if(!e || e.value === "" || e.value === null) { mSec.add(sm[id]); let t = e?.closest('.input-group')?.querySelector('label')?.textContent; mLab.push(t ? t.replace(/(\(.*?\))/g, '').replace(/\?$/, '').trim() : id); } });
+        nB && !document.getElementById('gcs')?.value && (mSec.add('sec-neuro'), mLab.push("Glasgow"));
+        document.querySelectorAll('.indicator-dot').forEach(d => d.classList.add('hidden'));
+        mSec.forEach(s => { if(s) { let d = document.getElementById(`dot-${s}`); d && d.classList.remove('hidden'); } });
+        return mLab;
+    };
+
+    window.calculateAllScores = () => {
+        const d = {};
+        document.querySelectorAll('input, select').forEach(el => { if(el.id) d[el.id] = el.type === 'checkbox' ? el.checked : (el.value === '' ? null : (isNaN(el.value) ? el.value : parseFloat(el.value))); });
+
+        d.vent = document.getElementById('vent_hfnc_mv')?.checked || document.getElementById('mech_cv_support')?.checked;
+        d.fio2_pct = d.fio2; d.plat = d.platelets; d.bil = d.bilirubin; d.hypercapnic = d.hypercapnic_failure; d.rrt = !!document.getElementById('rrt_modality')?.value; d.uo = d.urineOutput; d.conscious = document.getElementById('consciousness_level')?.value; d.kdigo_stage = document.getElementById('kdigo_stage')?.value; d.arf = !!d.kdigo_stage;
+
+        let sW = [], bV = document.getElementById('bed_number')?.value.toUpperCase() || '';
+        
+        const vM = document.getElementById('vent_mode_internal')?.value;
+        const cM = (f, dc) => { let m = []; f.forEach(x => { let v = d[x] !== undefined ? d[x] : getVal(x); (v === null || v === "" || Number.isNaN(v)) && m.push(dc[x]); }); return m; };
+        
+        if (d.vent && vM) {
+            vM === 'PSV' && (cM(['vent_vt', 'vent_peep', 'vent_pip', 'rr'], {vent_vt: 'VT', vent_peep: 'PEEP', vent_pip: 'Peak', rr: 'RR'}).length > 0 && sW.push(`PSV Mode: For Cdyn-MP, RSBI & MV, complete: ${cM(['vent_vt', 'vent_peep', 'vent_pip', 'rr'], {vent_vt: 'VT', vent_peep: 'PEEP', vent_pip: 'Peak', rr: 'RR'}).join(', ')}`), (isIntenseMode && document.getElementById('weaning_toggle')?.checked) && cM(['days_mv', 'gcs', 'mrc_score', 'hct', 'creatinine'], {days_mv: 'Days of MV', gcs: 'Glasgow', mrc_score: 'MRC', hct: 'HCT', creatinine: 'Creatinine'}).length > 0 && sW.push(`ExPreS Score needs: ${cM(['days_mv', 'gcs', 'mrc_score', 'hct', 'creatinine'], {days_mv: 'Days of MV', gcs: 'Glasgow', mrc_score: 'MRC', hct: 'HCT', creatinine: 'Creatinine'}).join(', ')}`));
+            vM === 'CNAF' && cM(['spo2', 'fio2', 'rr'], {spo2: 'SpO2', fio2: 'FiO2', rr: 'RR'}).length > 0 && sW.push(`HFNC Mode: For ROX Index, complete: ${cM(['spo2', 'fio2', 'rr'], {spo2: 'SpO2', fio2: 'FiO2', rr: 'RR'}).join(', ')}`);
+            vM === 'NIV' && (cM(['hr', 'ph', 'gcs', 'rr'], {hr: 'HR', ph: 'pH', gcs: 'Glasgow', rr: 'RR'}).length > 0 || (d.pao2 === null && d.spo2 === null)) && sW.push(`NIV/CPAP Mode: For HACOR Score, complete: ${cM(['hr', 'ph', 'gcs', 'rr'], {hr: 'HR', ph: 'pH', gcs: 'Glasgow', rr: 'RR'}).concat((d.pao2 === null && d.spo2 === null) ? ['PaO2 or SpO2'] : []).join(', ')}`);
+            (vM === 'VCV' || vM === 'PCV') && (cM(['vent_vt', 'vent_peep', 'vent_pip', 'rr'], {vent_vt: 'VT', vent_peep: 'PEEP', vent_pip: 'Peak', rr: 'RR'}).length > 0 || (vM === 'VCV' && d.vent_pip === null) || d.vent_pplat === null || (vM === 'VCV' && d.vent_flow === null)) && sW.push(`${vM} Mode: For Adv. Mechanics, complete: ${cM(['vent_vt', 'vent_peep', 'vent_pip', 'rr'], {vent_vt: 'VT', vent_peep: 'PEEP', vent_pip: 'Peak', rr: 'RR'}).concat(vM === 'VCV' && d.vent_pip === null ? ['Peak'] : []).concat(d.vent_pplat === null ? ['PPlat'] : []).concat(vM === 'VCV' && d.vent_flow === null ? ['Ti'] : []).join(', ')}`);
+        }
+        
+        document.getElementById('use_sedation')?.checked && /\b(propo|propofol)\b/i.test(document.getElementById('sedation_drugs')?.value || '') && sW.push('Consider Propofol Kcal in Nutritional Supply (1.1 kcal/ml of 1% Prop.)');
+
+        const rRoute = document.getElementById('nutri_route')?.value;
+        if (rRoute === 'enteral' || rRoute === 'parenteral') {
+            let cbmi = parseFloat(document.getElementById('summary-bmi')?.textContent), cegfr = parseFloat(document.getElementById('calculatedEGFR')?.textContent);
+            if (!isNaN(cbmi)) {
+                if (cbmi < 18.5) sW.push('Nutrition: Underweight (BMI <18.5). Target: 25-30 kcal/kg (Corrected BW) & 1.2-2.0 g/kg (Actual BW) of Protein.');
+                else if (cbmi >= 30 && cbmi <= 40) sW.push('Nutrition: Obese I-II. Hypocaloric target: 11-14 kcal/kg (Actual BW). Protein: 2.0 g/kg (IBW).');
+                else if (cbmi > 40 && cbmi <= 50) sW.push('Nutrition: Obese III (BMI 40-50). Hypocaloric target: 11-14 kcal/kg (Actual BW). Protein: 2.5 g/kg (IBW).');
+                else if (cbmi > 50) sW.push('Nutrition: Super Obese (>50). Target: 22-25 kcal/kg (IBW). Protein: 2.5 g/kg (IBW).');
+            }
+            if (!isNaN(cegfr) && cegfr < 40) sW.push('Nutrition: Renal Insufficiency (eGFR <40). Consider reducing protein target to 0.8 g/kg/day.');
+        }
+
+        const sE = document.getElementById('soft-warning-message'), sL = document.getElementById('softWarningList');
+        if (sW.length > 0) { sL.innerHTML = sW.map(w => `<li class="pb-0.5">• ${w}</li>`).join(''); sE.classList.remove('hidden'); } else sE && sE.classList.add('hidden');
+
+        hasAttemptedCalculation = !0;
+        const mL = window.checkMissingData();
+        if(mL.length > 0) { displayError(`Data needed for: ${[...new Set(mL)].join(', ')}`); document.getElementById('error-message')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+        clearError();
+
+        if(activeScores.news2) {
+            const s = window.calcNews2(d); document.getElementById('news2Score').textContent = s;
+            let lvl = s >= 7 ? ['High', 'High Risk: Emergency response. Continuous monitoring.'] : s >= 5 ? ['Medium', 'Medium Risk: Urgent response. Monitor every 1 hour.'] : s >= 3 ? ['Low-Medium', 'Low-Medium Risk: Monitor every 4-6 hours.'] : ['Low', 'Low Risk: Ward-based response. Monitor every 12 hours.'];
+            document.getElementById('news2Risk').textContent = `Clinical Risk: ${lvl[0]}`; document.getElementById('details-news2').textContent = lvl[1];
+        }
+        if(activeScores.sofa) {
+            const s = window.calcSofa2(d); document.getElementById('sofaScore').textContent = s;
+            let m = s >= 12 ? '> 90%' : (s >= 10 ? '≈ 50%' : (s >= 7 ? '≈ 30%' : '< 10%'));
+            document.getElementById('sofaMortality').textContent = `Mortality: ${m}`; document.getElementById('details-sofa').textContent = `In-hospital mortality based on initial score: ${m}`;
+        }
+        if(activeScores.saps2) {
+            const s = window.calcSaps2(d); document.getElementById('saps2Score').textContent = s;
+            const p = (Math.exp(-7.7631 + 0.0737 * s + 0.9971 * Math.log(s + 1)) / (1 + Math.exp(-7.7631 + 0.0737 * s + 0.9971 * Math.log(s + 1))) * 100).toFixed(1);
+            document.getElementById('saps2Mortality').textContent = `Mortality: ${p}%`; document.getElementById('details-saps2').textContent = `In-Hospital Mortality: ~${p}%`;
+        }
+        if(activeScores.apache2) {
+            const s = window.calcApache(d); document.getElementById('apache2Score').textContent = s;
+            let l = -3.517 + (0.146 * s); d.admissionType === 'Emergency Surgical' && (l += 0.603);
+            const p = (Math.exp(l) / (1 + Math.exp(l)) * 100).toFixed(1);
+            document.getElementById('apache2Mortality').textContent = `Mortality: ${p}%`; document.getElementById('details-apache2').textContent = `In-Hospital Mortality: ~${p}%`;
+        }
+        if(activeScores.saps3 || activeScores.mpm0) {
+            let mL = -5.3628 + (d.age !== null ? (d.age >= 80 ? 1.2758 : d.age >= 70 ? 0.9702 : d.age >= 60 ? 0.5774 : d.age >= 40 ? 0.1345 : 0) : 0) + ((d.rea_neuro_coma || (d.gcs !== null && d.gcs <= 5)) ? 1.3482 : 0) + ((d.hr !== null && d.hr >= 150) ? 0.5283 : 0) + ((d.sbp !== null && d.sbp <= 90) ? 0.8113 : 0) + (d.cpr_prior ? 1.0853 : 0) + ((d.admissionType === 'Medical' || d.admissionType === 'Emergency Surgical') ? 0.8656 : 0) + (d.vent_prior ? 0.9572 : 0) + (((d.cr !== null && d.cr >= 2.0) || d.arf || d.rrt) ? 0.5186 : 0) + (d.chr_cirr ? 1.0838 : 0) + (d.chr_meta ? 1.0646 : 0);
+            const mP = (Math.exp(mL) / (1 + Math.exp(mL)) * 100).toFixed(1);
+            document.getElementById('mpm0Score').textContent = `${Math.round((mP/100) * 50)}`; document.getElementById('mpm0Mortality').textContent = `Mortality: ~${mP}%`; document.getElementById('details-mpm0').textContent = `In-Hospital Mortality: ~${mP}%`;
+
+            let sR = [0, d.rea_cv_rhythm?-5:0, d.rea_neuro_seizures?-4:0, (d.rea_cv_hypo||d.rea_dig_acute)?3:0, d.rea_neuro_coma?4:0, (d.rea_cv_septic||d.rea_cv_anaph)?5:0, d.rea_hep_liver?6:0, d.rea_neuro_focal?7:0, d.rea_dig_panc?9:0, d.mass_effect?10:0].filter(x=>x!==0);
+            let s3 = (d.age !== null ? (d.age >= 80 ? 18 : d.age >= 75 ? 15 : d.age >= 70 ? 14 : d.age >= 60 ? 7 : d.age >= 40 ? 5 : 0) : 0) + (d.icu_location === 'Hospital Ward' ? 14 : d.icu_location === 'Emergency Room' || d.icu_location === 'Other Hospital' ? 12 : 0) + (d.vaso_prior ? 10 : 0) + ((d.hosp_days_before !== null && d.hosp_days_before >= 14) ? 12 : 0) + Math.max(0, d.chr_aids ? 13 : 0, d.chr_cirr ? 12 : 0, d.chr_hema ? 11 : 0, d.chr_meta ? 8 : 0, d.chr_nyha ? 5 : 0) + (d.inf_nosocomial ? 6 : d.inf_community ? 4 : 0) + (d.admissionType === 'Emergency Surgical' ? 10 : d.admissionType === 'Medical' ? 8 : 0) + (sR.length > 0 ? Math.max(...sR) : 0) + (d.hr !== null ? (d.hr >= 160 ? 7 : d.hr >= 120 ? 2 : d.hr < 50 ? 5 : 0) : 0) + (d.sbp !== null ? (d.sbp < 70 ? 11 : d.sbp < 120 ? 3 : 0) : 0) + (d.temp !== null ? (d.temp >= 40 ? 4 : d.temp < 35 ? 7 : 0) : 0) + (d.vent ? ((d.pao2 !== null && d.fio2_pct) ? ((d.pao2/(d.fio2_pct/100)) < 100 ? 11 : (d.pao2/(d.fio2_pct/100)) < 200 ? 7 : 0) : 0) : 0) + (d.ph !== null ? (d.ph < 7.25 ? 4 : d.ph < 7.30 ? 2 : d.ph >= 7.50 ? 1 : 0) : 0) + (d.cr !== null ? (d.cr >= 3.5 ? 8 : d.cr >= 2.0 ? 7 : d.cr >= 1.2 ? 2 : 0) : 0) + (d.bil !== null ? (d.bil >= 6.0 ? 8 : d.bil >= 2.0 ? 5 : d.bil >= 1.2 ? 4 : 0) : 0) + (d.plat !== null ? (d.plat < 20 ? 13 : d.plat < 50 ? 8 : d.plat < 100 ? 5 : 0) : 0) + (d.wbc !== null ? (d.wbc >= 30 ? 2 : d.wbc < 1.5 ? 6 : 0) : 0) + (d.gcs !== null ? (d.gcs < 7 ? 15 : d.gcs <= 9 ? 10 : d.gcs <= 12 ? 7 : d.gcs <= 14 ? 2 : 0) : 0);
+
+            document.getElementById('saps3Score').textContent = s3;
+            let s3L = -32.6659 + (Math.log(s3 + 20.5958) * 7.3068);
+            const s3P = (Math.exp(s3L) / (1 + Math.exp(s3L)) * 100).toFixed(1);
+            document.getElementById('saps3Mortality').textContent = `Mortality: ~${s3P}%`; document.getElementById('details-saps3').textContent = `In-Hospital Mortality: ~${s3P}%`;
+
+            const aS = window.calcApache(d), sS = window.calcSofa2(d), cC = [d.chr_meta, d.chr_hema, d.chr_aids, d.chr_cirr, d.chr_ckd, d.chr_arry, d.chr_nyha, d.chr_lung].filter(Boolean).length;
+            let mn = (d.age !== null ? (d.age >= 75 ? 2 : d.age >= 50 ? 1 : 0) : 0) + (aS >= 28 ? 3 : aS >= 20 ? 2 : aS >= 15 ? 1 : 0) + (sS >= 10 ? 2 : sS >= 6 ? 1 : 0) + (cC >= 2 ? 1 : 0) + ((d.hosp_days_before !== null && d.hosp_days_before >= 1) ? 1 : 0);
+            
+            document.getElementById('summary-mnutric').textContent = mn;
+            if (mn >= 5) { document.getElementById('mnutric-risk').textContent = 'High Risk'; document.getElementById('mnutric-details').textContent = 'Score ≥ 5: Associated with worse clinical outcomes. Nutritional intervention recommended.'; } 
+            else { document.getElementById('mnutric-risk').textContent = 'Low Risk'; document.getElementById('mnutric-details').textContent = 'Score < 5: Low risk. Lower likelihood of benefit from aggressive nutritional therapy.'; }
+        }
+        
+        if(activeScores.preop) {
+            const aM = { 1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI' };
+            const aD = { 1: 'Normal healthy patient.', 2: 'Mild systemic disease.', 3: 'Severe systemic disease.', 4: 'Severe systemic disease that is a constant threat to life.', 5: 'Moribund patient not expected to survive without operation.', 6: 'Declared brain-dead patient whose organs are being removed for donor purposes.' };
+            const aN = aM[d.asa_class] || 'N/A';
+            document.getElementById('asaScore').textContent = aN; document.getElementById('asaRisk').textContent = `Class: ${aN}`; document.getElementById('details-asa').textContent = aD[d.asa_class] || '';
+
+            let r = (['Major', 'Aortic'].includes(d.surgery_risk) ? 1 : 0) + (d.preop_ihd ? 1 : 0) + (d.preop_chf ? 1 : 0) + (d.preop_cvd ? 1 : 0) + (d.preop_insulin ? 1 : 0) + ((d.cr !== null && d.cr > 2.0) ? 1 : 0);
+            document.getElementById('rcriScore').textContent = r;
+            let rR = r === 1 ? '0.9%' : r === 2 ? '6.6%' : r >= 3 ? '>11%' : '0.4%';
+            document.getElementById('rcriRisk').textContent = `MACE Risk: ${rR}`; document.getElementById('details-rcri').textContent = "Risk of Major Adverse Cardiac Event (MACE) within 30 days.";
+
+            let m = (d.age !== null ? (d.age >= 85 ? 17 : d.age >= 75 ? 13 : d.age >= 65 ? 7 : 0) : 0) + ((d.cr !== null && d.cr > 1.5) ? 10 : 0) + (parseInt(d.asa_class) === 5 ? 43 : parseInt(d.asa_class) === 4 ? 33 : parseInt(d.asa_class) === 3 ? 24 : parseInt(d.asa_class) === 2 ? 12 : 0) + (d.functional_status === 'Totally Dependent' ? 17 : d.functional_status === 'Partially Dependent' ? 11 : 0) + (d.surgery_risk === 'Aortic' ? 23 : d.surgery_risk === 'Major' ? 16 : d.surgery_risk === 'Moderate' ? 8 : 0);
+            document.getElementById('micaScore').textContent = m;
+            const mP = (Math.exp(-4.5 + (0.05 * m)) / (1 + Math.exp(-4.5 + (0.05 * m))) * 100).toFixed(1);
+            document.getElementById('micaRisk').textContent = `MACE Risk: ~${mP}%`; document.getElementById('details-mica').textContent = "Risk of myocardial infarction or cardiac arrest within 30 days.";
+
+            let p = (d.age !== null ? (d.age >= 90 ? 6 : d.age >= 85 ? 5 : d.age >= 80 ? 4 : d.age >= 75 ? 3 : d.age >= 70 ? 2 : d.age >= 65 ? 1 : 0) : 0) + (d.preop_dementia ? 7 : 0) + ((d.chr_meta || d.chr_hema) ? 4 : 0) + (d.preop_chf ? 5 : 0) + (d.preop_copd ? 2 : 0) + (d.preop_pvd ? 2 : 0) + (d.surgery_risk === 'Aortic' ? 15 : d.surgery_risk === 'Major' ? 10 : d.surgery_risk === 'Moderate' ? 5 : 0);
+            document.getElementById('pospomScore').textContent = p;
+            const pP = (Math.exp(-5.5 + (0.15 * p)) / (1 + Math.exp(-5.5 + (0.15 * p))) * 100).toFixed(1);
+            document.getElementById('pospomRisk').textContent = `Mortality: ~${pP}%`; document.getElementById('details-pospom').textContent = "In-hospital mortality risk.";
+        }
+        
+        document.querySelectorAll('.score-details').forEach(e => e.textContent ? e.classList.remove('hidden') : e.classList.add('hidden'));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+document.documentElement.scrollTop = 0;
+document.body.scrollTop = 0;
+
+        window.updateLiveMonitor();
+    };
+
+    window.generateReportText = () => {
+        const val = id => document.getElementById(id)?.value || '', txt = id => document.getElementById(id)?.textContent?.replace(/\s+/g, ' ').trim() || '';
+        const c = (lbl, v, sfx='') => (v && v!=='-') ? `${lbl} ${v}${sfx}` : null;
+        let rpt = "";
+        if (isIntenseMode) {
+            rpt += `${val('sex')==='Male'?'Masculino':(val('sex')==='Female'?'Femenino':'Paciente')} de ${val('age')} años\n`;
+            let sd = val('sedation_drugs');
+            let nTx = document.getElementById('use_sedation').checked ? `RASS ${val('rass_score')}${sd?` (${sd.replace(/\b(propo|propofol)\b/gi,'Propofol').replace(/\b(mida|midazolam)\b/gi,'Midazolam').replace(/\b(fenta|fentanilo|fentanyl)\b/gi,'Fentanilo').replace(/\b(dexme|dexmedetomidina)\b/gi,'Dexmedetomidina')})`:''}` : `FOUR ${(val('four_eye')&&val('four_motor')&&val('four_brainstem')&&val('four_resp'))?(Number(val('four_eye')) + Number(val('four_motor')) + Number(val('four_brainstem')) + Number(val('four_resp'))):'-'} (O${val('four_eye')||'-'} M${val('four_motor')||'-'} B${val('four_brainstem')||'-'} R${val('four_resp')||'-'})`;
+            rpt += `N: ${nTx}, Dolor (${val('pain_scale_selector').toUpperCase()}) ${val('pain_score_total')}\n`;
+            
+            let md = val('vent_mode_internal'), vS = val('vent_settings') || '', vK = txt('summary-vt-kg'), vKn = vK && vK !== '-' ? vK.split(' ')[0] : '?', vV = val('vent_vt');
+            let pafi = c('PaO2/FiO2',txt('calculatedPaFi')), aa = c('A-a',txt('calculatedAaGradient')), safi = c('SpO2/FiO2',txt('calculatedSaFi')), gS = [pafi, aa, safi].filter(Boolean).join(', '), rS = '';
+
+            if (['VCV', 'PCV', 'PSV'].includes(md)) {
+                vS = vS.replace(/^(?:ACV|VCV|VC|ACP|PCV|PC|PSV|ESP|ESPONTANEO)\s+/i, '').replace(/\/?\/?\s*\b(?:Peak|Pico|Plat|Meseta)\s*[:=]?\s*\d+(?:\.\d+)?\b/gi, '').replace(/\/?\/?\s*\b(?:I:E)\s*[:=]?\s*\d+:\d+(?:\.\d+)?\b/gi, '').replace(/\b(?:VT|VC|Vt~)\s*[:=]?\s*\d+\b/gi, '');
+                md === 'PSV' && (vS = vS.replace(/\b(?:f|fr|fR)\s*[:=]?\s*\d+(?:\.\d+)?\b/gi, ''));
+                vS = vS.replace(/[,/-\s]+$/, '').trim().replace(/\b(PEEP)\s*[:=]?\s*(\d+(?:\.\d+)?)\b/gi, 'PEEP $2 cmH₂O').replace(/\b(?:f|fr|fR)\s*[:=]?\s*(\d+(?:\.\d+)?)\b/gi, 'f $1 rpm').replace(/\b(Vtrig)\s*[:=]?\s*(\d+(?:\.\d+)?)\b/gi, 'Vtrig $2 L/min').replace(/\b(FiO2)\s*[:=]?\s*(\d+)\s*%?/gi, 'FiO2 $2%');
+
+                let pip = val('vent_pip') || '-', pplat = val('vent_pplat') || '-', dp = txt('calc_dp')?.split(' ')[0] || '-', cst = txt('calc_cstat')?.split(' ')[0] || '-', mp = (md==='PSV'?txt('calc_psv_mp'):txt('calc_mp'))?.split(' ')[0] || '-';
+                md !== 'PSV' && (vS = vS.replace(/\b(Ti)\s*[:=]?\s*(\d+(?:\.\d+)?)\b/gi, `Ti $2 seg (I:E ${txt('calc_ie')})`));
+
+                rS = md === 'VCV' ? `${`ACV VT ${vV} ml (${vKn} ml/kg IBW) ` + vS} // Peak ${pip} cmH₂O, Plat ${pplat} cmH₂O // ΔP ${dp} cmH₂O, Cstat ${cst} ml/cmH₂O, MP ${mp} J/min // ${gS}` : 
+                     md === 'PCV' ? `${`ACP Pi ${vS.match(/\b(?:Pi|Pinsp|Ps)\s*[:=]?\s*(\d+(?:\.\d+)?)\b/i)?.[1]||'?'} cmH₂O (Vt~ ${vV} ml = ${vKn} ml/kg IBW) ` + vS.replace(/\b(?:Pi|Pinsp|Ps)\s*[:=]?\s*(?:\d+(?:\.\d+)?)\b/i, '').trim()} // Peak ${pip} cmH₂O, Plat ${pplat} cmH₂O // ΔP ${dp} cmH₂O, Cstat ${cst} ml/cmH₂O, MP ${mp} J/min // ${gS}` : 
+                     `${`PSV Ps ${vS.match(/\b(?:Ps|Psup)\s*[:=]?\s*(\d+(?:\.\d+)?)\b/i)?.[1]||'?'} cmH₂O (Vt~ ${vV} ml = ${vKn} ml/kg IBW) ` + vS.replace(/\b(?:Ps|Psup)\s*[:=]?\s*(?:\d+(?:\.\d+)?)\b/i, '').trim()} // fR ${val('rr')||'-'} rpm Peak ${pip} cmH₂O // RSBI ${txt('calc_rsbi')?.split(' ')[0]||'-'} rpm/L, ΔPaw ${txt('calc_psv_dp')?.split(' ')[0]||'-'} cmH₂O, Cdyn ${txt('calc_psv_cdyn')?.split(' ')[0]||'-'} ml/cmH₂O, MP ${mp} J/min, Cdyn-MP ${txt('calc_cdyn_mp')?.split(' ')[0]||'-'} cmH₂O²/min // ${gS}`;
+                rS = rS.replace(/\s{2,}/g, ' ');
+            } else {
+                rS = `${!document.getElementById('vent_hfnc_mv').checked?`FR ${val('rr')}, `:''}${[vS, pafi, aa, safi, c('ROX',txt('calc_rox')), c('HACOR',txt('calc_hacor'))].filter(Boolean).join(', ')}, SO2 ${val('spo2')}%, FiO2 ${val('fio2')}%`;
+            }
+            rpt += `R: ${rS.replace(/\s+/g, ' ')}\n`;
+
+            let vs = [c('NE',val('dose_ne')), c('Epi',val('dose_epi')), c('Vaso',val('dose_vaso')), c('Dopa',val('dose_dopa')), c('Fenil',val('dose_phenyl'))].filter(Boolean);
+            let iA = [c('Dobutamina',val('dose_dobu')), c('Levosimendán',val('dose_milri'))].filter(Boolean), iTx = iA.length ? `Inotrópicos: ${iA.join(', ')} mcg/kg/min` : null;
+            let crt = val('crt'); crt = (crt==='< 2'||+crt<2)?'< 2':(crt==='> 5'||+crt>5)?'> 5':crt;
+            let cS = val('cv_support_settings'), mTx = document.getElementById('mech_cv_support')?.checked ? `Soporte CV${cS ? ` (${cS})` : ''}` : null;
+            rpt += `HD: TA ${val('sbp')}/${val('dbp')} mmHg, PAM ${txt('calculatedMap')} mmHg, Llenado Capilar ${crt||'-'}s, FC ${val('hr')}, IC ${txt('calculatedSI')}, ${vs.length?vs.join(', ')+(vs.length===1&&val('dose_vaso')?' U/min':' mcg/kg/min'):'Sin vasopresor'}${iTx?`, ${iTx}`:''}${mTx?`, ${mTx}`:''}\n`;
+            
+            if(document.getElementById('ekg_analysis_toggle')?.checked) { 
+                let ekg = [c('FC',txt('calc_ekg_hr')),c('Eje',txt('calc_ekg_axis')),c('PR',txt('calc_ekg_pr')),c('QRS',txt('calc_ekg_qrs')),c('QT',txt('calc_ekg_qt')),c('QTc',txt('calc_ekg_qtc'))].filter(Boolean).join(', '); 
+                if(ekg) rpt += ` EKG: ${ekg}\n`; 
+            }
+
+            let gm = [c('mNutric',txt('summary-mnutric'))];
+            if(val('gluc_cap')) gm.push(`Gluc ${val('gluc_cap')} mg/dl`);
+            let r = val('nutri_route'), insTot = txt('smart_insulin_total');
+            if(insTot && insTot !== '-') gm.push(`Insulina: ${insTot.replace('Total: ', '')}`);
+            let cmt = val('ent_comment_fasting') || val('ent_comment_oral') || val('ent_comment') || val('ent_comment_paren');
+            if(r==='ayuno') gm.push('Fasting NPO', c('Coment:', cmt));
+            else if(r==='vo') gm.push('Vía Oral', c('',val('nutri_cal_supply'),' kcal'), c('',val('nutri_prot_supply'),' g prot'), c('Coment:', cmt));
+            else if(r==='enteral') { let dr=val('diet_rate'); if(dr&&dr!=='-') gm.push(`Dieta polimérica vía SNG/SOG a ${dr} ml/hr (Aporte: ${[txt('summary-cal-d')!=='-'?txt('summary-cal-d')+' kcal/kg/d':null, txt('summary-prot-d')!=='-'?txt('summary-prot-d')+' g/kg/d':null].filter(Boolean).join(', ') || `${val('ent_target')}${isProteinTarget?'g':'kcal'}/kg/d`})`); gm.push(c('Coment:', cmt)); }
+            else if(r==='parenteral') gm.push(`NPT${val('paren_cal_tot')?` (${val('paren_cal_tot')} kcal)`:''}`, c('Coment:', cmt));
+            if(gm.filter(Boolean).length) rpt += `GM: ${gm.filter(Boolean).join(', ')}\n`;
+
+            let nu = `NU: CrCl ${txt('calculatedCrCl')} ml/min, TFG ${txt('calculatedEGFR')}, Diuresis ${txt('calculatedUIndex')} cc/kg/hr (en ${val('uoHours')||'-'} Hrs)`;
+            if(txt('calc_balance')!=='-') nu += `, Balance ${txt('calc_balance')} ml${val('fluid_in')?` (Ingresos: ${val('fluid_in')} ml, Egresos: ${val('fluid_out')} ml)`:''} en ${val('uoHours')||'-'} hrs`;
+            if(val('balance_ac')) nu += `, Balance Ac. ${val('balance_ac')} ml`;
+            if(val('kdigo_stage')) nu += `, LRA KDIGO ${val('kdigo_stage')}`;
+            if(val('rrt_modality')) nu += `, ${document.getElementById('rrt_modality').options[document.getElementById('rrt_modality').selectedIndex].text}${val('rrt_settings')?` (${val('rrt_settings')})`:''}`;
+            rpt += nu + `\nHI: Temp ${val('temp')} °C\nME: Peso ${txt('summary-weight')} kg, ${document.getElementById('summary-height-label')?.textContent.includes('Estim')?'Talla Est.':'Talla'} ${txt('summary-height')} cm, IMC ${txt('summary-bmi')}, Peso Ideal ${txt('summary-ibw')} kg, Peso Magro ${txt('summary-lbw')} kg\n\nSCORES\n`;
+        }
+        let sl = [];
+        [{ c: activeScores.news2, l: 'NEWS2', r: 'news2Risk', s: 'news2Score' }, { c: activeScores.sofa, l: 'SOFA-2', r: 'sofaMortality', s: 'sofaScore' }, { c: activeScores.saps2, l: 'SAPS-II', r: 'saps2Mortality', s: 'saps2Score' }, { c: activeScores.apache2, l: 'APACHE-II', r: 'apache2Mortality', s: 'apache2Score' }, { c: activeScores.saps3, l: 'SAPS-III', r: 'saps3Mortality', s: 'saps3Score' }, { c: activeScores.mpm0, l: 'MPM0-III', r: 'mpm0Mortality', s: 'mpm0Score' }, { c: activeScores.preop, l: 'ASA', r: 'asaRisk', s: 'asaScore' }, { c: activeScores.preop, l: 'RCRI', r: 'rcriRisk', s: 'rcriScore' }, { c: activeScores.preop, l: 'NSQIP MICA', r: 'micaRisk', s: 'micaScore' }, { c: activeScores.preop, l: 'POSPOM', r: 'pospomRisk', s: 'pospomScore' }].forEach(i => {
+            if (i.c && txt(i.s) !== '-' && txt(i.s) !== 'N/A') {
+                let rsk = txt(i.r).split(': ')[1] || txt(i.r);
+                sl.push(`${i.l}: ${txt(i.s)} (${['SOFA-2','SAPS-II','APACHE-II','SAPS-III','MPM0-III','POSPOM'].includes(i.l)?'Mort. ':['RCRI','NSQIP MICA'].includes(i.l)?'MACE Risk: ':''}${rsk})`);
+            }
+        });
+        if (val('vent_mode_internal') === 'PSV' && txt('calc_expres') !== '-' && txt('calc_expres')) sl.push(`ExPreS: ${txt('calc_expres').replace('(', 'pts (')}`);
+        
+        let report = rpt + sl.join('\n');
+        
+        let bV = val('bed_number').toUpperCase(), fM = bV.match(/\[([A-Z,\s]+)\]/g), aA = [];
+        if(fM) fM.forEach(m => m.replace(/\[|\]/g, '').split(',').forEach(s => { let t = s.trim(); if(['N','R','HD','GM','NU','HI','ME'].includes(t)) aA.push(t); }));
+        if(aA.length > 0) { report = report.split('\n').filter(l => aA.includes(l.split(':')[0].trim())).join('\n'); }
+
+        return report;
+    };
+
+    window.updateLiveMonitor = () => {
+        let bV = document.getElementById('bed_number')?.value.toUpperCase() || '';
+        let lm = document.getElementById('live_monitor_container');
+        if (!lm) return;
+        if (bV.includes('[LIVE]')) { 
+            lm.classList.remove('hidden'); 
+            lm.classList.add('flex'); 
+            document.getElementById('live_monitor_text').value = window.generateReportText(); 
+        } else { 
+            lm.classList.add('hidden'); 
+            lm.classList.remove('flex'); 
+        }
+    };
+
+window.copyToClipboard = () => {
+        let report = window.generateReportText();
+        if (!report.trim()) return;
+        const area = document.getElementById('hidden-copy-area');
+        if(area) {
+            area.value = report; area.select(); document.execCommand('copy');
+        }
+        const t = document.getElementById('copy-toast');
+        if(t) { t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
+    };
+
+    let isNavigating = !1, vSec = new Set();
+    const updateActiveNavUI = () => {
+        if (isNavigating) return;
+        let act = Array.from(vSec).sort((a,b) => (document.getElementById(a)?.offsetTop||0) - (document.getElementById(b)?.offsetTop||0))[0];
+        document.querySelectorAll('.nav-link').forEach(l => { 
+            let h = l.getAttribute('href')?.substring(1); 
+            h && (h === act ? (l.classList.add('opacity-100','grayscale-0','scale-125','drop-shadow-md'), l.classList.remove('opacity-60','grayscale','hover:opacity-100','hover:grayscale-0','hover:scale-110')) : (l.classList.remove('opacity-100','grayscale-0','scale-125','drop-shadow-md'), l.classList.add('opacity-60','grayscale','hover:opacity-100','hover:grayscale-0','hover:scale-110'))); 
+        });
+    };
+
+    window.onload = () => {
+        const rC = [
+            {id:'news2',n:'NEWS2',c:'green',l:'Clinical Risk'}, {id:'sofa',n:'SOFA-2',c:'yellow',l:'Mortality'},
+            {id:'saps2',n:'SAPS-II',c:'red',l:'Mortality'}, {id:'apache2',n:'APACHE-II',c:'blue',l:'Mortality'},
+            {id:'saps3',n:'SAPS-III',c:'orange',l:'Mortality'}, {id:'mpm0',n:'MPM0-III',c:'cyan',l:'Mortality'},
+            {id:'asa',n:'ASA',c:'purple',l:'Class'}, {id:'rcri',n:'RCRI',c:'purple',l:'MACE Risk'},
+            {id:'mica',n:'NSQIP MICA',c:'purple',l:'MACE Risk',sm:1}, {id:'pospom',n:'POSPOM',c:'purple',l:'Mortality'}
+        ];
+        document.getElementById('dynamic-score-cards').innerHTML = rC.map(s => `<div id="result-${s.id}" class="score-res-card border-l-8 border-${s.c}-500"><div class="flex justify-between items-center w-full"><div class="flex items-center space-x-4"><h3 class="${s.sm?'text-sm w-32':'text-lg w-24'} font-black text-${s.c}-700 uppercase tracking-tight">${s.n}</h3><div class="text-3xl font-black text-${s.c}-600" id="${s.id}Score">-</div></div><div class="text-xs font-black text-slate-700 bg-${s.c}-50 px-3 py-2 rounded-xl border border-${s.c}-100 text-right min-w-[130px]" id="${s.id}${s.l==='Class'||s.l.includes('Risk')?'Risk':'Mortality'}">${s.l}: -</div></div><div class="text-[10px] font-bold text-${s.c}-700 mt-3 pt-2 border-t border-${s.c}-100 score-details hidden" id="details-${s.id}"></div></div>`).join('');
+
+        const fourD = [{id:'eye',l:'Eye',o:['4 - Open/Tracking','3 - Open/Not track','2 - Closed/Voice','1 - Closed/Pain','0 - Remains closed']},{id:'motor',l:'Motor',o:['4 - Thumbs up/Fist','3 - Localizes pain','2 - Flexion','1 - Extension','0 - No response']},{id:'brainstem',l:'Brainstem',o:['4 - Pupil/Cornea intact','3 - One wide/fixed','2 - Pupil/Cornea abs.','1 - Both abs.','0 - All absent']},{id:'resp',l:'Resp',o:['4 - Regular','3 - Cheyne-Stokes','2 - Irregular','1 - Paces vent','0 - Apnea/Vent dep.']}];
+        document.getElementById('four_container').innerHTML = fourD.map(d=>`<select id="four_${d.id}" class="sel-sm"><option value="">${d.l}</option>${d.o.map(o=>`<option value="${o.split(' ')[0]}">${o}</option>`).join('')}</select>`).join('');
+
+        const pt = {bps:{cls:'grid grid-cols-3 gap-1',items:[{i:'bps_face',l:'Face',o:['1-Relaxed','2-Partially','3-Fully','4-Grimacing']},{i:'bps_limbs',l:'Limbs',o:['1-No move','2-Part bent','3-Fully bent','4-Retracted']},{i:'bps_vent',l:'Vent',o:['1-Tolerating','2-Coughing','3-Fighting','4-Unable']}]},cpot:{cls:'grid grid-cols-2 gap-1',items:[{i:'cpot_face',l:'Face',o:['0-Relaxed','1-Tense','2-Grimacing']},{i:'cpot_body',l:'Body',o:['0-Normal','1-Protecting','2-Restless']},{i:'cpot_muscle',l:'Muscle',o:['0-Relaxed','1-Tense','2-Rigid']},{i:'cpot_vent',l:'Vent/Voc',o:['0-Tolerating','1-Coughing','2-Fighting']}]},nvps:{cls:'flex flex-col gap-1',html:`<div class="grid grid-cols-3 gap-1">${[{i:'nvps_face',l:'Face',o:['0-Relaxed','1-Frown','2-Grimace']},{i:'nvps_act',l:'Activity',o:['0-Quiet','1-Restless','2-Arching']},{i:'nvps_guard',l:'Guard',o:['0-None','1-Touch','2-Tense']}].map(x=>`<select id="${x.i}" class="sel-sm"><option value="">${x.l}</option>${x.o.map(o=>`<option value="${o.split('-')[0]}">${o}</option>`).join('')}</select>`).join('')}</div><div class="grid grid-cols-2 gap-1">${[{i:'nvps_phys1',l:'SBP / HR',o:['0-Baseline','1-Change >20','2-Change >30']},{i:'nvps_phys2',l:'RR / SO2',o:['0-Baseline','1-Mild asynch','2-Severe asynch']}].map(x=>`<select id="${x.i}" class="sel-sm"><option value="">${x.l}</option>${x.o.map(o=>`<option value="${o.split('-')[0]}">${o}</option>`).join('')}</select>`).join('')}</div>`}};
+        document.getElementById('pain_tools_container').innerHTML = `<div id="pain_evn_container" class="pain-tool flex flex-col gap-1"><input type="number" id="pain_evn_val" min="0" max="10" placeholder="0-10" class="inp-sm text-center font-bold h-7"></div>` + ['bps','cpot'].map(k=>`<div id="pain_${k}_container" class="hidden ${pt[k].cls} pain-tool">${pt[k].items.map(x=>`<select id="${x.i}" class="sel-sm"><option value="">${x.l}</option>${x.o.map(o=>`<option value="${o.split('-')[0]}">${o}</option>`).join('')}</select>`).join('')}</div>`).join('') + `<div id="pain_nvps_container" class="hidden ${pt.nvps.cls} pain-tool">${pt.nvps.html}</div>`;
+
+        const mrcM = ['Shoulder Abduction|5 = Normal','Elbow flexion|4 = Against gravity & resistance','Wrist flexion|3 = Against gravity only','Hip flexion|2 = moves but not against gravity','Knee extension|1 = Contraction only','Foot dorsiflexion|0 = No contraction'];
+        document.getElementById('mrc_tbody').innerHTML = mrcM.map((m,i)=>`<tr class="border-b border-slate-50"><td class="py-1">${m.split('|')[0]}</td><td class="px-1 text-center"><input type="number" id="mrc_l_${i+1}" min="0" max="5" class="mrc-inp w-10 p-0.5 text-center border rounded outline-none focus:ring-1 focus:ring-teal-400"></td><td class="px-1 text-center"><input type="number" id="mrc_r_${i+1}" min="0" max="5" class="mrc-inp w-10 p-0.5 text-center border rounded outline-none focus:ring-1 focus:ring-teal-400"></td><td class="pl-2 font-normal text-slate-500">${m.split('|')[1]}</td></tr>`).join('');
+
+        Object.keys(localStorage).forEach(k => { if(k.startsWith('icu_bed_')) { try { let d = JSON.parse(localStorage.getItem(k)); d._ts && (Date.now() - d._ts > 345600000) && localStorage.removeItem(k); } catch(e){} } });
+
+        const l1 = [{i:'na',l:'Sodium',p:'mEq/L',s:'saps2,apache2'},{i:'k',l:'Potassium',p:'mEq/L',s:'saps2,apache2',t:'0.1'},{i:'ph',l:'pH',p:'pH',s:'saps2,apache2,saps3',t:'0.01'},{i:'bicarb',l:'Bicarb',p:'mEq/L',s:'saps2,apache2'}];
+        const l2 = [{i:'hct',l:'HCT',p:'%',s:'apache2'},{i:'wbc',l:'WBC',p:'x 10³',s:'saps2,apache2,saps3',t:'0.1'},{i:'platelets',l:'PLT',p:'x 10³',s:'sofa,saps3'},{i:'bilirubin',l:'Bilirubin',p:'mg/dL',s:'sofa,saps2,saps3',t:'0.1'}];
+        document.getElementById('dyn_labs_1').innerHTML = l1.map(x=>`<div class="input-group" data-scores="${x.s}"><label class="lbl-pri">${x.l}</label><input type="number" id="${x.i}" step="${x.t||'any'}" placeholder="${x.p}" class="inp-base"></div>`).join('');
+        document.getElementById('dyn_labs_2').innerHTML = l2.map(x=>`<div class="input-group" data-scores="${x.s}"><label class="lbl-pri">${x.l}</label><input type="number" id="${x.i}" step="${x.t||'any'}" placeholder="${x.p}" class="inp-base"></div>`).join('');
+
+        const ac = [{i:'cpr_prior',l:'CPR prior to admission',s:'mpm0'},{i:'vaso_prior',l:'Vasoactive therapy prior',s:'saps3'},{i:'dnr_dni',l:'DNR / DNI Status',s:'mpm0'},{i:'vent_prior',l:'Intubated/Ventilated Prior',s:'mpm0'},{i:'inf_nosocomial',l:'Nosocomial Infection',s:'saps3'},{i:'inf_community',l:'Community-Acq. Infection',s:'saps3'},{i:'rea_cv_rhythm',l:'CV: Rhythm disturbances',s:'saps3'},{i:'rea_cv_hypo',l:'CV: Hypovol/Hemorrhagic shock',s:'saps3'},{i:'rea_cv_septic',l:'CV: Septic shock',s:'saps3'},{i:'rea_cv_anaph',l:'CV: Anaphylactic/Mixed shock',s:'saps3'},{i:'rea_neuro_seizures',l:'Neuro: Seizures',s:'saps3'},{i:'rea_neuro_coma',l:'Neuro: Coma/Stupor',s:'saps3,mpm0'},{i:'rea_neuro_focal',l:'Neuro: Focal deficit',s:'saps3'},{i:'mass_effect',l:'Neuro: Intracranial Mass Effect',s:'saps3'},{i:'rea_dig_acute',l:'Digestive: Acute abdomen/other',s:'saps3'},{i:'rea_dig_panc',l:'Digestive: Severe pancreatitis',s:'saps3'},{i:'gi_bleed',l:'Digestive: Acute GI Bleeding',s:'mpm0'},{i:'rea_hep_liver',l:'Hepatic: Liver failure',s:'saps3'},{i:'cva_stroke',l:'CVA (Stroke)',s:'mpm0'}];
+        document.getElementById('dyn_acute_conds').innerHTML = ac.map(x=>`<label class="flex items-center space-x-2 cursor-pointer" data-scores="${x.s}"><input type="checkbox" id="${x.i}" class="accent-teal-600 h-4 w-4 rounded"><span class="text-[10px] font-bold text-slate-700">${x.l}</span></label>`).join('');
+
+        const chr = [{i:'chr_meta',l:'Metastatic Cancer'},{i:'chr_hema',l:'Hematologic Malignancy'},{i:'chr_aids',l:'AIDS / Immunocompromise'},{i:'chr_cirr',l:'Cirrhosis'},{i:'chr_ckd',l:'Chronic Kidney Disease'},{i:'chr_arry',l:'Cardiac Arrhythmia'},{i:'chr_nyha',l:'Heart Failure (NYHA IV)'},{i:'chr_lung',l:'Chronic Lung Disease'}];
+        document.getElementById('dyn_chr_conds').innerHTML = `<div class="space-y-3">${chr.slice(0,3).map(x=>`<label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" id="${x.i}" class="accent-indigo-600 h-4 w-4 rounded"><span class="text-xs font-bold text-slate-700">${x.l}</span></label>`).join('')}</div><div class="space-y-3">${chr.slice(3,5).map(x=>`<label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" id="${x.i}" class="accent-indigo-600 h-4 w-4 rounded"><span class="text-xs font-bold text-slate-700">${x.l}</span></label>`).join('')}</div><div class="space-y-3">${chr.slice(5,8).map(x=>`<label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" id="${x.i}" class="accent-indigo-600 h-4 w-4 rounded"><span class="text-xs font-bold text-slate-700">${x.l}</span></label>`).join('')}</div>`;
+
+const surg = [{i:'preop_ihd',l:'Ischemic Heart Disease'},{i:'preop_chf',l:'Congestive Heart Failure'},{i:'preop_cvd',l:'Cerebrovascular Disease'},{i:'preop_insulin',l:'Insulin Therapy'},{i:'preop_dementia',l:'Dementia'},{i:'preop_copd',l:'COPD'},{i:'preop_pvd',l:'Peripheral Vascular Dis.'}];
+        let dSurg = document.getElementById('dyn_surg_conds');
+        if(dSurg) dSurg.innerHTML = surg.map(x=>`<label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" id="${x.i}" class="accent-purple-600 h-4 w-4 rounded"><span class="text-[10px] font-bold text-slate-700">${x.l}</span></label>`).join('');
+        
+        document.querySelectorAll('input, select').forEach(e => e.id && e.id !== 'bed_number' && (initialState[e.id] = e.type === 'checkbox' ? e.checked : e.value));
+        setTimeout(() => window.loadPatientData(document.getElementById('bed_number')?.value), 100);
+
+        const s = document.querySelectorAll('.nav-section'), nL = document.querySelectorAll('.nav-link'), nav = document.getElementById('floating-nav');
+        nL.forEach(l => {
+            l.addEventListener('click', () => {
+                if(!l.getAttribute('href')) return;
+                isNavigating = !0;
+                nL.forEach(x => { 
+                    if(x.getAttribute('href')){ 
+                        x.classList.remove('opacity-100', 'grayscale-0', 'scale-125', 'drop-shadow-md'); 
+                        x.classList.add('opacity-60', 'grayscale', 'hover:opacity-100', 'hover:grayscale-0', 'hover:scale-110'); 
+                    } 
+                });
+                l.classList.add('opacity-100', 'grayscale-0', 'scale-125', 'drop-shadow-md'); 
+                l.classList.remove('opacity-60', 'grayscale', 'hover:opacity-100', 'hover:grayscale-0', 'hover:scale-110');
+                if (nav && window.innerWidth < 1024) nav.scrollTo({ left: l.offsetLeft - nav.offsetWidth / 2 + l.offsetWidth / 2, behavior: 'smooth' });
+                setTimeout(() => { isNavigating = !1; updateActiveNavUI(); }, 800);
+            });
+        });
+        
+        const obs = new IntersectionObserver(e => { if(!isNavigating) { e.forEach(x => x.isIntersecting ? vSec.add(x.target.id) : vSec.delete(x.target.id)); updateActiveNavUI(); } }, { root: null, rootMargin: '-20% 0px -60% 0px', threshold: 0 });
+        s.forEach(sec => obs.observe(sec));
+
+        localStorage.getItem('intenseMode') === 'true' && window.toggleIntenseMode(!0);
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark-theme');
+            const b = document.getElementById('dark_mode_btn'); b && (b.textContent = '☀️');
+        }
+
+        document.getElementById('score-selection-panel')?.addEventListener('change', e => { 
+            if(e.target.classList.contains('score-toggle')) { 
+                (e.target.id === 'select-admission' && e.target.checked) && (document.getElementById('select-daily').checked = !0); 
+                if (e.target.id === 'select-preop' && e.target.checked && isIntenseMode) {
+                    let ekgT = document.getElementById('ekg_analysis_toggle');
+                    if(ekgT && !ekgT.checked) { ekgT.checked = !0; document.getElementById('ekg_container')?.classList.remove('hidden'); window.updateEKG(); }
+                }
+                window.updateUIVisibility(); 
+            } 
+        });
+
+        const iP = document.getElementById('input-panel');
+        if (iP) {
+            let bE = document.getElementById('bed_number');
+            if(bE) { bE.addEventListener('blur', function() { window.loadPatientData(this.value); }); bE.addEventListener('keydown', function(e) { e.key === 'Enter' && this.blur(); }); }
+
+            iP.addEventListener('keydown', e => {
+                if (e.target.id === 'crt' && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+                    e.preventDefault(); let v = e.target.value, n = parseFloat(v);
+                    if (isNaN(n)) n = (v === '< 2') ? 1 : (v === '> 5') ? 6 : 1;
+                    n += (e.key === 'ArrowUp') ? 1 : -1; e.target.value = n < 2 ? '< 2' : (n > 5 ? '> 5' : n);
+                    e.target.dispatchEvent(new Event('input', { bubbles: !0 }));
+                }
+            });
+
+            document.getElementById('fluid_proy_input')?.addEventListener('input', e => {
+                const v = e.target.value, c = document.getElementById('calc_fluid_proy');
+                if(!v) { c.textContent = '-'; return; }
+                try { const s = v.split('+').reduce((a, x) => a + (parseFloat(x) || 0), 0); c.textContent = s > 0 ? `${+(s * 24).toFixed(2)} /Día (${+s.toFixed(2)}/hr)` : '-'; } catch(err) { c.textContent = '-'; }
+            });
+
+            iP.addEventListener('input', e => {
+                const id = e.target.id; if (!id) return;
+                
+                const rT = {
+                    'bed_number': () => {
+                        let v = e.target.value, u = v.toUpperCase(), n = v.split('[')[0].trim();
+                        document.title = n ? `${n} - ICU Scores` : 'ICU Scores Calculator';
+
+                        const cL = (cmd, arr) => { if(u.includes(cmd)){ arr.forEach(i=>{let el=document.getElementById(i);if(el)el.value='';}); v = v.replace(new RegExp('\\['+cmd.replace(/\W/g,'')+'\\]', 'i'), '').trim(); e.target.value = v; u = v.toUpperCase(); } };
+                        
+                        u.includes('[CLEAR]') && (localStorage.removeItem('icu_bed_'+(n||'default')), location.reload());
+                        cL('[CLEARLABS]', ['na','k','ph','bicarb','hct','wbc','platelets','bilirubin','alt_lab','fa_lab','creatinine','bun','pao2','paco2','gluc_cap']);
+                        cL('[CLEARBALANCE]', ['fluid_in','fluid_out','uoHours','urineOutput']);
+                        if(u.includes('[CLEARVENT]')){ let el=document.getElementById('vent_hfnc_mv'); if(el)el.checked=!1; }
+                        cL('[CLEARVENT]', ['vent_settings','vent_vt','vent_peep','vent_pip','vent_pplat','vent_flow']);
+                        cL('[ND]', ['fluid_in','fluid_out','uoHours','urineOutput','rr','spo2','fio2','sbp','dbp','hr','temp','crt','vent_pip','vent_pplat']);
+
+                        let lm = document.getElementById('live_monitor_container'), isL = u.includes('[LIVE]');
+                        lm && (lm.classList.toggle('hidden', !isL), lm.classList.toggle('flex', isL));
+
+                        if(u.includes('[DEMO]')) {
+                            const demo = {age:65, weight:80, height_input:170, sex:'Male', sbp:85, dbp:45, hr:115, temp:38.5, rr:24, spo2:92, fio2:70, gcs_eye:3, gcs_verbal:1, gcs_motor:5, creatinine:2.1, bun:45, fluid_in:1500, fluid_out:500, uoHours:12, urineOutput:400, kdigo_stage:'II', pao2:65, paco2:45, vent_hfnc_mv:!0, vent_settings:'ACV VT 450 PEEP 8 Peak 32 Plat 24 Ti 0.9', gluc_cap:180, ent_comment_fasting:'NPO', pain_scale_selector:'bps', bps_face:3, bps_limbs:2, bps_vent:2, dose_ne:0.15, admissionType:'Medical', use_sedation:!0, rass_score:'-4', sedation_drugs:'Propofol 20'};
+                            Object.entries(demo).forEach(([k,val])=>{ let el=document.getElementById(k); if(el){ el.type==='checkbox'?el.checked=val:el.value=val; el.dispatchEvent(new Event('input',{bubbles:!0})); } });
+                            document.getElementById('sex-male').classList.add('active'); document.getElementById('nutri_route').value='ayuno';
+                            e.target.value = v.replace(/\[DEMO\]/i, '').trim();
+                        }
+                    },
+                    'labs_paste': () => { if(e.target.value){ const mp={'pCO2':'paco2','pO2':'pao2','Cr':'creatinine','BUN':'bun','Leu':'wbc','K':'k','Na':'na','pH':'ph','Htc':'hct','HCO3':'bicarb','BT':'bilirubin','Plt':'platelets','Gluc':'gluc_cap','Glu':'gluc_cap','ALT':'alt_lab','FA':'fa_lab'}; for(let[k,tId] of Object.entries(mp)){let m=e.target.value.match(new RegExp(`\\b${k}\\b\\s*[:=]?\\s*([\\d.]+)`,'i')); if(m&&m[1]){let el=document.getElementById(tId); el&&(el.value=m[1]);}} } },
+                    'known_patient_paste': () => { 
+                        if(e.target.value){ 
+                            let t=e.target.value, mS=t.match(/\b(Masculino|Femenino)\b/i), mA=t.match(/de\s+(\d+)\s+años/i), mW=t.match(/Peso\s+([\d.]+)/i), mH=t.match(/Talla(?: Est\.)?\s+([\d.]+)/i); 
+                            mS&&window.setSex(mS[1].toLowerCase()==='masculino'?'Male':'Female'); 
+                            mA&&(document.getElementById('age').value=mA[1]); 
+                            mW&&(document.getElementById('weight').value=mW[1]); 
+                            mH&&(document.getElementById('height_input').value=mH[1]); 
+                        } 
+                    },
+                    'vent_settings': () => { let t=e.target.value.toUpperCase(); if(!t){document.getElementById('vent_mode_display').textContent='-';document.getElementById('vent_mode_internal').value='';}else{ let iM="",dM="-",mV=t.match(/\b(ACV|VCV|VC)\b/),mP=t.match(/\b(ACP|PCV|PC)\b/),mPS=t.match(/\b(PSV|ESP|ESPONTANEO)\b/),mC=t.match(/\b(CNAF|HFNC|OAF|AF)\b/),mN=t.match(/\b(VMNI|NIV|NIMV|CPAP|BIPAP)\b/); if(mC){iM="CNAF";dM=mC[1];}else if(mN){iM="NIV";dM=mN[1];}else if(mV){iM="VCV";dM=mV[1];}else if(mP){iM="PCV";dM=mP[1];}else if(mPS){iM="PSV";dM=mPS[1];} document.getElementById('vent_mode_display').textContent=dM;document.getElementById('vent_mode_internal').value=iM; let mVl=r=>{let m=t.match(r);return m&&m[1]?m[1]:null;}; const vs={'vent_vt':mVl(/\b(?:VT|VC)\s*[:=]?\s*([\d.]+)/i),'vent_peep':mVl(/\bPEEP\s*[:=]?\s*([\d.]+)/i),'vent_pip':mVl(/\b(?:PEAK|PICO|PPICO|P PICO|PPEAK)\s*[:=]?\s*([\d.]+)/i),'vent_pplat':mVl(/\b(?:PPLAT|MESETA|P MESETA|PLAT)\s*[:=]?\s*([\d.]+)/i),'vent_flow':mVl(/\b(?:FLOW|FLUJO|VMAX|V MAX|TI)\s*[:=]?\s*([\d.]+)/i),'rr':mVl(/\b(?:FR|F|RR)\s*[:=]?\s*([\d.]+)/i),'fio2':mVl(/\b(?:FIO2|FIO)\s*[:=]?\s*([\d.]+)/i),'spo2':mVl(/\b(?:SPO2|SAT|SATO2)\s*[:=]?\s*([\d.]+)/i)}; for(let[k,v] of Object.entries(vs)){if(v){let el=document.getElementById(k);el&&(el.value=v);}} } },
+                    'ekg_input': () => window.parseEKGText(),
+                    'ekg_rr_val': () => window.updateEKG(),
+                    'ekg_qrs_10s': () => window.updateEKG(),
+                    'ekg_rr_min': () => window.updateEKG(),
+                    'ekg_rr_max': () => window.updateEKG(),
+                    'ekg_d1': () => window.updateEKG(),
+                    'ekg_avf': () => window.updateEKG(),
+                    'ekg_pr': () => window.updateEKG(),
+                    'ekg_qrs': () => window.updateEKG(),
+                    'ekg_qt': () => window.updateEKG(),
+                    'ent_target': () => window.updateNutrition(!1),
+                    'diet_rate': () => window.updateNutrition(!0)
+                };
+
+                rT[id] ? rT[id]() : (
+                    e.target.classList.contains('mrc-inp') ? (() => { let s=0; document.querySelectorAll('.mrc-inp').forEach(i=>s+=(+i.value||0)); let m=document.getElementById('mrc_score'); m.value=s; m.dispatchEvent(new Event('input',{bubbles:!0})); })() : null
+                );
+
+                if(id !== 'bed_number' && id !== 'ent_target' && id !== 'diet_rate' && !id.startsWith('ekg_')) {
+                    window.updatePatientSummary(); window.updatePhysiology(); window.updateRespiratoryMechanics(); window.updateNutrition();
+                    hasAttemptedCalculation && window.checkMissingData();
+                    window.savePatientData();
+                } else if (id === 'ent_target' || id === 'diet_rate' || id.startsWith('ekg_')) {
+                    hasAttemptedCalculation && window.checkMissingData();
+                    window.savePatientData();
+                }
+                
+                document.getElementById('bed_number')?.value.toUpperCase().includes('[LIVE]') && (document.getElementById('live_monitor_text').value = window.generateReportText());
+            });
+
+            iP.addEventListener('change', e => {
+                const id = e.target.id; if (!id) return;
+                const rTc = {
+                    'kdigo_stage': () => e.target.dataset.manual = e.target.value === "" ? 'false' : 'true',
+                    'crt': () => { let cV=parseFloat(e.target.value); if(!isNaN(cV)){ if(cV<2)e.target.value='< 2'; else if(cV>5)e.target.value='> 5'; } },
+                    'use_sedation': () => { let iS=e.target.checked; document.getElementById('four_container')?.classList.toggle('hidden',iS); document.getElementById('rass_container')?.classList.toggle('hidden',!iS); document.getElementById('sedation_drugs_container')?.classList.toggle('hidden',!iS); },
+                    'rrt_modality': () => document.getElementById('rrt_settings_container')?.classList.toggle('hidden',e.target.value===''),
+                    'pain_scale_selector': () => { let v=e.target.value; ['evn','bps','cpot','nvps'].forEach(s=>document.getElementById(`pain_${s}_container`)?.classList.toggle('hidden',v!==s)); },
+                    'vent_hfnc_mv': () => document.getElementById('vent_settings_container')?.classList.toggle('hidden',!e.target.checked),
+                    'ekg_qtc_form': () => window.updateEKG()
+                };
+                
+                rTc[id] ? rTc[id]() : (
+                    id.startsWith('gcs_') ? window.updateGCS() :
+                    (id.startsWith('four_') || id==='rass_score' || id==='use_sedation') ? window.updateNeuroScore() :
+                    (id.startsWith('pain_') || id.startsWith('bps_') || id.startsWith('cpot_') || id.startsWith('nvps_')) ? window.updatePainScore() : null
+                );
+                
+                if(id !== 'bed_number' && id !== 'ent_target' && id !== 'diet_rate' && !id.startsWith('ekg_')) {
+                    window.updatePatientSummary(); window.updatePhysiology(); window.updateRespiratoryMechanics(); window.updateNutrition();
+                    hasAttemptedCalculation && window.checkMissingData();
+                    window.savePatientData();
+                }
+                
+                document.getElementById('bed_number')?.value.toUpperCase().includes('[LIVE]') && (document.getElementById('live_monitor_text').value = window.generateReportText());
+            });
+        }
+
+        ['fluid_in', 'fluid_out', 'balance_ac', 'urineOutput'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('blur', function() {
+                if(!this.value) return;
+                try { let s = this.value.replace(/[^0-9+\-.]/g, ''); if(s) { let r = s.match(/[+\-]?[^+\-]+/g).reduce((a, c) => a + parseFloat(c), 0); this.value = Number.isInteger(r) ? r : r.toFixed(2); this.dispatchEvent(new Event('input', {bubbles: !0})); } } catch(e){}
+            });
+        });
+
+        window.updateUIVisibility();
+    };
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').then(() => {
+        console.log('PWA lista para escritorio');
+      });
+    });
+  }
+</script>
+</body>
+</html>
