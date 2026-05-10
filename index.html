@@ -59,7 +59,7 @@
             <img src="icon.png" alt="ICU Logo" class="w-14 h-14 lg:w-16 lg:h-16 object-contain drop-shadow-md rounded-2xl">
             <div class="text-left">
                 <h1 class="text-2xl sm:text-3xl font-black text-indigo-700 tracking-tight leading-tight">ICU Scores Calculator</h1>
-                <p class="text-[10px] text-slate-500 font-bold tracking-wide mt-0.5">V5.0.1 | Vibe-Coded by Saul Pool R5 Med. Crit. on HTML, JS & Tailwind</p>
+                <p class="text-[10px] text-slate-500 font-bold tracking-wide mt-0.5">V<span id="app-version">5.0.1</span> | Vibe-Coded by Saul Pool R5 Med. Crit. on HTML, JS & Tailwind</p>
             </div>
         </div>
 
@@ -1119,9 +1119,9 @@ g && (g.className = `grid gap-2 border-b border-slate-50 pb-2 transition-all ${i
         }
         
         document.querySelectorAll('.score-details').forEach(e => e.textContent ? e.classList.remove('hidden') : e.classList.add('hidden'));
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-document.documentElement.scrollTop = 0;
-document.body.scrollTop = 0;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
 
         window.updateLiveMonitor();
     };
@@ -1239,6 +1239,7 @@ window.copyToClipboard = () => {
     };
 
     window.onload = () => {
+        fetch('manifest.json').then(r => r.json()).then(d => { const v = document.getElementById('app-version'); if(v && d.version) v.textContent = d.version; }).catch(e => console.log('Modo local sin manifest'));
         const rC = [
             {id:'news2',n:'NEWS2',c:'green',l:'Clinical Risk'}, {id:'sofa',n:'SOFA-2',c:'yellow',l:'Mortality'},
             {id:'saps2',n:'SAPS-II',c:'red',l:'Mortality'}, {id:'apache2',n:'APACHE-II',c:'blue',l:'Mortality'},
