@@ -1002,8 +1002,9 @@ g && (g.className = `grid gap-2 border-b border-slate-50 pb-2 transition-all ${i
         let req = [], mSec = new Set(), mLab = [];
         let nB = activeScores.news2 || activeScores.sofa || activeScores.saps2 || activeScores.apache2 || activeScores.saps3 || activeScores.mpm0;
         let nL = activeScores.sofa || activeScores.saps2 || activeScores.apache2 || activeScores.saps3 || activeScores.mpm0;
-        nB && req.push('age', 'sex', 'temp', 'hr', 'sbp', 'dbp', 'rr', 'spo2', 'fio2', 'consciousness_level');
+        nB && req.push('age', 'temp', 'hr', 'sbp', 'dbp', 'rr', 'spo2', 'fio2', 'consciousness_level');
         nL && req.push('na', 'k', 'bun', 'creatinine', 'wbc', 'hct', 'platelets', 'urineOutput', 'uoHours');
+        isIntenseMode && !req.includes('sex') && req.push('sex');
         activeScores.preop && (!req.includes('asa_class') && req.push('asa_class', 'surgery_risk', 'functional_status'), !req.includes('age') && req.push('age'), !req.includes('creatinine') && req.push('creatinine'));
         (activeScores.saps3 || activeScores.mpm0) && !req.includes('admissionType') && req.push('admissionType');
 
