@@ -1,6 +1,6 @@
 {
-  "name": "ICU Scores Calculator",
-  "short_name": "ICU Scores",
+  "name": "CritCalc",
+  "short_name": "CritCalc",
   "description": "Calculadora Médica para UCI",
   "start_url": "./",
   "display": "standalone",
