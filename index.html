@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ICU Scores Calculator</title>
+    <title>CritCalc</title>
     <link rel="icon" type="image/png" href="icon-192.png">
     <link rel="apple-touch-icon" href="icon-192.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -42,10 +42,19 @@
         #copy-toast { visibility: hidden; opacity: 0; transition: opacity 0.3s, visibility 0.3s; }
         #copy-toast.show { visibility: visible; opacity: 1; }
         .sex-toggle.active { background-color: #4338ca; color: white; border-color: #4338ca; }
-        html { scroll-behavior: smooth; scroll-padding-top: 6rem; transition: filter 0.3s ease; }
+        html { scroll-behavior: smooth; scroll-padding-top: 4.5rem; transition: filter 0.3s ease; }
         .hidden-scrollbar::-webkit-scrollbar { display: none; }
         .hidden-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         body:not(.intense-active) .intense-only { display: none !important; }
+        #select-admission:checked + .admission-appendix-label { color: #0f766e; }
+        #select-admission:checked + .admission-appendix-label span { color: inherit; }
+        .admission-appendix:has(#select-admission:checked) { background-color: #f0fdfa; border-color: #5eead4; }
+        .header-score-btn { min-height: 3.25rem; }
+        .header-score-btn.is-active-indigo { box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); background-color: #eef2ff; border-color: #6366f1; color: #4338ca; }
+        .header-score-btn.is-active-amber { box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); background-color: #fffbeb; border-color: #f59e0b; color: #b45309; }
+        .header-score-btn.is-active-slate { box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); background-color: #1e293b; border-color: #334155; color: #fcd34d; }
+        .header-score-btn.is-active-purple { box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); background-color: #faf5ff; border-color: #a855f7; color: #7e22ce; }
+        .header-score-btn.is-active-teal { background-color: #f0fdfa; border-color: #14b8a6; }
         
         /* MAGIC DARK MODE */
         html.dark-theme { filter: invert(1) hue-rotate(180deg); background-color: #0f172a; }
@@ -54,47 +63,57 @@
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-900 pb-12 transition-colors duration-200">
 
-<div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-    <header id="score-selection-panel" class="relative bg-white shadow-sm rounded-2xl mb-6 border border-slate-200 overflow-hidden nav-section px-5 py-4 flex justify-between items-center flex-col lg:flex-row items-start lg:items-center gap-4 lg:gap-6">
-        <div class="flex items-center gap-4 w-full lg:w-auto shrink-0">
-            <img src="icon-192.png" alt="ICU Logo" class="w-14 h-14 lg:w-16 lg:h-16 object-contain drop-shadow-md rounded-2xl">
-            <div class="text-left">
-                <h1 class="text-2xl sm:text-3xl font-black text-indigo-700 tracking-tight leading-tight">ICU Scores Calculator</h1>
-                <p class="text-[10px] text-slate-500 font-bold tracking-wide mt-0.5">V<span id="app-version">5.0.1</span> | Vibe-Coded by Saul Pool R5 Med. Crit. on HTML, JS & Tailwind</p>
+<header id="score-selection-panel" class="nav-section sticky top-0 z-[60] w-full bg-white shadow-sm border-b border-slate-200">
+    <div class="w-full max-w-[100%] px-3 sm:px-5 py-2 flex flex-row items-center justify-between gap-2 sm:gap-3 min-h-0">
+        <div class="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0">
+            <img src="icon-192.png" alt="CritCalc" class="w-9 h-9 sm:w-10 sm:h-10 object-contain drop-shadow-md rounded-xl shrink-0">
+            <div class="text-left min-w-0">
+                <h1 class="text-lg sm:text-xl font-black text-indigo-700 tracking-tight leading-tight truncate">CritCalc</h1>
+                <p class="text-[9px] text-slate-500 font-bold tracking-wide leading-tight">V<span id="app-version">5.1.0</span> | Vibe-Coded by Saul Pool R5 Med. Crit. on HTML, JS & Tailwind</p>
             </div>
+            <button type="button" onclick="window.toggleDarkMode()" id="dark_mode_btn" class="header-score-btn flex flex-col justify-center border-2 rounded-xl px-2 sm:px-2.5 py-1 transition-all duration-300 bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100 shrink-0" title="Dark mode">
+                <span id="dark_mode_btn_icon" class="text-sm leading-none">🌙</span>
+                <span id="dark_mode_btn_label" class="font-black text-[9px] uppercase tracking-wide">Dark</span>
+            </button>
         </div>
 
-        <div class="flex flex-col sm:flex-row gap-2.5 w-full lg:w-auto flex-wrap xl:flex-nowrap justify-start lg:justify-end shrink-0">
-            <label class="relative cursor-pointer flex-1 sm:flex-none group">
+        <div class="flex flex-row items-stretch gap-1.5 sm:gap-2 shrink-0">
+            <button type="button" onclick="window.toggleIntenseMode()" id="intense_mode_btn" class="header-score-btn flex flex-col justify-center border-2 rounded-xl px-2 sm:px-2.5 py-1 transition-all duration-300 bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100" title="Chill / Intense mode">
+                <span id="intense_mode_btn_label" class="font-black text-xs uppercase tracking-wide">Chill</span>
+                <span class="text-[8px] font-bold opacity-80 leading-tight hidden sm:block">Basic scores</span>
+            </button>
+
+            <label class="relative cursor-pointer shrink-0">
                 <input type="checkbox" id="select-daily" class="peer hidden score-toggle" checked>
-                <div class="flex flex-col justify-center h-full border-2 rounded-xl px-3.5 py-2.5 transition-all duration-300 bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100 peer-checked:shadow-md peer-checked:bg-indigo-50 peer-checked:border-indigo-500 peer-checked:text-indigo-700">
-                    <span class="font-black text-sm uppercase tracking-wide">Daily</span>
-                    <span class="text-[9px] font-bold opacity-80 leading-tight mt-0.5">NEWS2, SOFA-2, SAPS-II, APACHE-II</span>
+                <div class="flex flex-row items-stretch border-2 rounded-xl overflow-hidden transition-all duration-300 bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100 peer-checked:shadow-md peer-checked:bg-indigo-50 peer-checked:border-indigo-500 peer-checked:text-indigo-700 min-h-[3.25rem]">
+                    <div class="flex flex-col justify-center px-2 sm:px-2.5 py-1 pointer-events-none">
+                        <span class="font-black text-xs uppercase tracking-wide">Daily</span>
+                        <span class="text-[8px] font-bold opacity-80 leading-tight max-w-[7rem] sm:max-w-none">NEWS2, SOFA-2, SAPS-II, APACHE-II</span>
+                    </div>
+                    <div class="admission-appendix flex items-center gap-1 px-1.5 sm:px-2 py-1 border-l border-slate-200/80 peer-checked:border-indigo-200/80 bg-white/40 peer-checked:bg-indigo-100/40" onclick="event.preventDefault(); event.stopPropagation();">
+                        <input type="checkbox" id="select-admission" class="score-toggle h-3.5 w-3.5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer shrink-0" onclick="event.stopPropagation();">
+                        <span class="admission-appendix-label text-left leading-tight pointer-events-none text-slate-500">
+                            <span class="block text-[9px] font-black uppercase tracking-wide">Admission</span>
+                            <span class="block text-[8px] font-bold opacity-80">SAPS-III + mNUTRIC</span>
+                        </span>
+                    </div>
                 </div>
             </label>
 
-            <label class="relative cursor-pointer flex-1 sm:flex-none group">
-                <input type="checkbox" id="select-admission" class="peer hidden score-toggle">
-                <div class="flex flex-col justify-center h-full border-2 rounded-xl px-3.5 py-2.5 transition-all duration-300 bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100 peer-checked:shadow-md peer-checked:bg-teal-50 peer-checked:border-teal-500 peer-checked:text-teal-700">
-                    <span class="font-black text-sm uppercase tracking-wide">Admission</span>
-                    <span class="text-[9px] font-bold opacity-80 leading-tight mt-0.5">SAPS-III, MPM0</span>
-                </div>
-            </label>
-
-            <label class="relative cursor-pointer flex-1 sm:flex-none group">
+            <label class="relative cursor-pointer shrink-0">
                 <input type="checkbox" id="select-preop" class="peer hidden score-toggle">
-                <div class="flex flex-col justify-center h-full border-2 rounded-xl px-3.5 py-2.5 transition-all duration-300 bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100 peer-checked:shadow-md peer-checked:bg-purple-50 peer-checked:border-purple-500 peer-checked:text-purple-700">
-                    <span class="font-black text-sm uppercase tracking-wide">PreOp</span>
-                    <span class="text-[9px] font-bold opacity-80 leading-tight mt-0.5">ASA, RCRI, MICA, POSPOM</span>
+                <div class="flex flex-col justify-center min-h-[3.25rem] border-2 rounded-xl px-2 sm:px-2.5 py-1 transition-all duration-300 bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100 peer-checked:shadow-md peer-checked:bg-purple-50 peer-checked:border-purple-500 peer-checked:text-purple-700">
+                    <span class="font-black text-xs uppercase tracking-wide">PreOp</span>
+                    <span class="text-[8px] font-bold opacity-80 leading-tight">ASA, RCRI, MICA, POSPOM</span>
                 </div>
             </label>
         </div>
-    </header>
+    </div>
+</header>
 
+<div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
     <main class="flex flex-col lg:flex-row gap-6 lg:gap-3 items-start">
-        <aside class="order-1 lg:order-2 sticky top-4 lg:top-8 z-50 flex flex-row lg:flex-col items-center gap-3 w-full lg:w-12 flex-shrink-0 overflow-x-auto hidden-scrollbar">
-            <button onclick="window.toggleDarkMode()" id="dark_mode_btn" class="p-2 rounded-full bg-slate-800 text-amber-300 hover:bg-slate-700 transition shadow-md border border-slate-700 w-10 h-10 lg:w-12 lg:h-12 flex items-center justify-center text-xl lg:text-2xl flex-shrink-0">🌙</button>
-            <button onclick="window.toggleIntenseMode()" id="intense_mode_btn" class="p-2 rounded-full bg-white text-slate-700 hover:bg-slate-100 transition shadow-md border border-slate-200 w-10 h-10 lg:w-12 lg:h-12 flex items-center justify-center text-xl lg:text-2xl flex-shrink-0">🧮</button>
+        <aside class="order-1 lg:order-2 sticky top-[4.5rem] lg:top-[5rem] z-50 flex flex-row lg:flex-col items-center gap-3 w-full lg:w-12 flex-shrink-0 overflow-x-auto hidden-scrollbar">
             <nav id="floating-nav" class="flex flex-row lg:flex-col bg-indigo-50/95 backdrop-blur-md lg:bg-indigo-50 lg:shadow-sm border border-indigo-100 rounded-full w-full lg:w-10 flex-shrink-0 items-center justify-start py-2 lg:py-4 gap-2 lg:gap-3">
                 <a href="#score-selection-panel" title="Back to Top" class="nav-link text-xl relative flex items-center justify-center w-10 h-10 lg:w-full transition-all duration-300 flex-shrink-0 opacity-100 grayscale-0 scale-125 drop-shadow-md">📟</a>
                 <a href="#sec-patient" title="Patient Details" class="nav-link text-xl relative flex items-center justify-center w-10 h-10 lg:w-full transition-all duration-300 flex-shrink-0 opacity-100 grayscale-0 scale-125 drop-shadow-md">🆔<div class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full hidden indicator-dot" id="dot-sec-patient"></div></a>
@@ -124,12 +143,12 @@
             <div id="sec-patient" class="space-y-4 nav-section">
                 <h3 class="text-xs font-black text-blue-600 uppercase tracking-[0.2em]">Patient Details</h3>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                    <div class="input-group" data-scores="sofa,saps2,apache2,news2,preop,saps3,mpm0"><label class="lbl-pri">Age (yr)</label><input type="number" id="age" min="18" placeholder="years" class="inp-base"></div>
+                    <div class="input-group" data-scores="sofa,saps2,apache2,news2,preop,saps3"><label class="lbl-pri">Age (yr)</label><input type="number" id="age" min="18" placeholder="years" class="inp-base"></div>
                     <div class="input-group intense-only" data-scores="sofa,saps2,apache2,saps3"><label class="lbl-pri">Weight (kg)</label><input type="number" id="weight" placeholder="kg" class="inp-base"></div>
                     <div class="input-group intense-only" data-scores="sofa,saps2,apache2"><button type="button" id="height_toggle_btn" onclick="window.toggleHeightMode()" class="lbl-sec text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded hover:bg-indigo-100 w-full text-left transition h-5">Height (cm)</button><input type="number" id="height_input" placeholder="cm" class="inp-base"></div>
                     <div class="input-group intense-only" data-scores="sofa,saps2,apache2,news2,preop,saps3"><label class="lbl-sec">Sex</label><div class="flex space-x-2"><button type="button" onclick="window.setSex('Male')" id="sex-male" class="sex-toggle flex-1 py-3 rounded-lg border border-slate-200 font-bold text-slate-600 text-sm transition-colors">Male</button><button type="button" onclick="window.setSex('Female')" id="sex-female" class="sex-toggle flex-1 py-3 rounded-lg border border-slate-200 font-bold text-slate-600 text-sm transition-colors">Female</button><input type="hidden" id="sex" value=""></div></div>
-                    <div class="input-group md:col-span-2" data-scores="sofa,saps2,apache2,news2,saps3,mpm0"><label class="lbl-pri text-indigo-700 uppercase">LABS</label><input type="text" id="labs_paste" placeholder="Paste Labs / Laboratoriazo" class="inp-base bg-indigo-50/20 border-indigo-200 shadow-sm"></div>
-                    <div class="input-group md:col-span-2 intense-only" data-scores="sofa,saps2,apache2,news2,preop,saps3,mpm0"><label class="lbl-pri">Known Patient?</label><input type="text" id="known_patient_paste" placeholder="Paste previous report here to extract: Age, Sex, Weight & Height..." class="inp-base shadow-sm"></div>
+                    <div class="input-group md:col-span-2" data-scores="sofa,saps2,apache2,news2,saps3"><label class="lbl-pri text-indigo-700 uppercase">LABS</label><input type="text" id="labs_paste" placeholder="Paste Labs / Laboratoriazo" class="inp-base bg-indigo-50/20 border-indigo-200 shadow-sm"></div>
+                    <div class="input-group md:col-span-2 intense-only" data-scores="sofa,saps2,apache2,news2,preop,saps3"><label class="lbl-pri">Known Patient?</label><input type="text" id="known_patient_paste" placeholder="Paste previous report here to extract: Age, Sex, Weight & Height..." class="inp-base shadow-sm"></div>
                 </div>
             </div>
 
@@ -143,20 +162,20 @@
                 </div>
             </div>
 
-            <div id="sec-admission" class="space-y-4 pt-4 border-t border-slate-100 input-group nav-section" data-scores="saps2,apache2,saps3,mpm0">
+            <div id="sec-admission" class="space-y-4 pt-4 border-t border-slate-100 input-group nav-section" data-scores="saps2,apache2,saps3">
                 <h3 class="text-xs font-black text-teal-600 uppercase tracking-[0.2em]">Admission Details</h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="input-group" data-scores="saps2,apache2,saps3,mpm0"><label class="lbl-pri">Admission Type</label><select id="admissionType" class="sel-base focus:ring-teal-500"><option value="Medical" selected>Medical (Non-operative)</option><option value="Scheduled Surgical">Scheduled Surgical</option><option value="Emergency Surgical">Emergency Surgical</option></select></div>
+                    <div class="input-group" data-scores="saps2,apache2,saps3"><label class="lbl-pri">Admission Type</label><select id="admissionType" class="sel-base focus:ring-teal-500"><option value="Medical" selected>Medical (Non-operative)</option><option value="Scheduled Surgical">Scheduled Surgical</option><option value="Emergency Surgical">Emergency Surgical</option></select></div>
                     <div class="input-group hidden adm-expanded" data-scores="saps3"><label class="lbl-pri">Location before ICU</label><select id="icu_location" class="sel-base focus:ring-teal-500"><option value="Emergency Room" selected>Emergency Room</option><option value="Hospital Ward">Hospital Ward</option><option value="Operating Room">Operating Room</option><option value="Other Hospital">Another Hospital</option></select></div>
                     <div class="input-group hidden adm-expanded" data-scores="saps3"><label class="lbl-pri">Days in Hosp. before ICU</label><input type="number" id="hosp_days_before" value="0" min="0" class="inp-base focus:ring-teal-500"></div>
                 </div>
-                <div class="hidden adm-expanded" data-scores="saps3,mpm0">
+                <div class="hidden adm-expanded" data-scores="saps3">
                     <div class="bg-teal-50/50 border border-teal-100 rounded-xl p-4">
                         <h4 class="lbl-pri text-teal-700 uppercase mb-3 border-b border-teal-100 pb-1">Acute Conditions Prior to ICU</h4>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 gap-x-4 gap-y-2" id="dyn_acute_conds"></div>
                     </div>
                 </div>
-                <div class="input-group pt-2" data-scores="saps2,apache2,preop,saps3,mpm0">
+                <div class="input-group pt-2" data-scores="saps2,apache2,preop,saps3">
                     <h4 class="lbl-pri uppercase mb-2">Chronic Health Conditions</h4>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50/80 border border-slate-200 rounded-xl p-4 shadow-sm" id="dyn_chr_conds"></div>
                 </div>
@@ -165,7 +184,7 @@
             <div id="sec-neuro" class="space-y-4 pt-4 border-t border-slate-100 nav-section">
                 <h3 class="text-xs font-black text-pink-500 uppercase tracking-[0.2em]">Neurological</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start gap-6">
-                    <div class="input-group flex flex-col" data-scores="sofa,saps2,apache2,saps3,mpm0">
+                    <div class="input-group flex flex-col" data-scores="sofa,saps2,apache2,saps3">
                         <label class="lbl-lg">Glasgow (3-15)</label>
                         <input type="number" id="gcs" min="3" max="15" placeholder="GCS" class="inp-base text-center font-bold text-slate-700 mb-2">
                         <div class="grid grid-cols-3 gap-1">
@@ -174,7 +193,7 @@
                             <select id="gcs_motor" class="sel-sm"><option value="">Motor</option><option value="6">6 - Obeys commands</option><option value="5">5 - Localising</option><option value="4">4 - Normal flexion</option><option value="3">3 - Abnormal flexion</option><option value="2">2 - Extension</option><option value="1">1 - None</option></select>
                         </div>
                     </div>
-                    <div class="input-group flex flex-col intense-only" data-scores="news2,sofa,saps2,apache2,saps3,mpm0">
+                    <div class="input-group flex flex-col intense-only" data-scores="news2,sofa,saps2,apache2,saps3">
                         <div class="flex justify-between items-center mb-1"><label class="lbl-lg mb-0">Neuro</label><label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" id="use_sedation" class="accent-indigo-600 h-3 w-3 rounded"><span class="lbl-sec text-indigo-600 mb-0">Sedation?</span></label></div>
                         <input type="text" id="neuro_score_input" placeholder="RASS / FOUR" class="inp-base text-center font-bold text-slate-700 mb-2">
                         <div id="four_container" class="grid grid-cols-1 md:grid-cols-2 gap-4 !gap-1"></div>
@@ -185,7 +204,7 @@
                         <select id="consciousness_level" class="sel-base mb-2"><option value="" disabled selected>ACVPU?</option><option value="Alert">Alert</option><option value="Confusion">Confusion (New)</option><option value="Voice">Responds to Voice</option><option value="Pain">Responds to Pain</option><option value="Unresponsive">Unresponsive</option></select>
                         <div class="input-group" data-scores="sofa"><label class="flex items-center space-x-2 cursor-pointer pt-1"><input type="checkbox" id="delirium_drugs" class="accent-yellow-500 h-4 w-4 rounded bg-yellow-50"><span class="lbl-pri mb-0">Drugs for Delirium?</span></label></div>
                     </div>
-                    <div class="input-group flex flex-col intense-only" data-scores="news2,sofa,saps2,apache2,saps3,mpm0">
+                    <div class="input-group flex flex-col intense-only" data-scores="news2,sofa,saps2,apache2,saps3">
                         <div class="flex justify-between items-center mb-1 space-x-1"><label class="lbl-lg mb-0">Pain</label><select id="pain_scale_selector" class="w-auto rounded border-none p-0 text-[10px] bg-transparent outline-none font-black text-indigo-700 cursor-pointer focus:ring-0"><option value="evn" selected>EVN (0-10)</option><option value="bps">BPS (3-12)</option><option value="cpot">CPOT (0-8)</option><option value="nvps">NVPS (0-10)</option></select></div>
                         <input type="number" id="pain_score_total" placeholder="Score" class="inp-base bg-slate-50 text-center font-bold text-slate-700 mb-2" readonly>
                         <div id="pain_tools_container"></div>
@@ -287,13 +306,13 @@
             <div id="sec-hemo" class="space-y-4 pt-4 border-t border-slate-100 nav-section">
                 <h3 class="text-xs font-black text-red-600 uppercase tracking-[0.2em]">Hemodynamics</h3>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                    <div class="input-group" data-scores="news2,sofa,saps2,apache2,saps3,mpm0"><label class="lbl-lg">Systolic BP</label><input type="number" id="sbp" placeholder="mmHg" class="inp-base"></div>
+                    <div class="input-group" data-scores="news2,sofa,saps2,apache2,saps3"><label class="lbl-lg">Systolic BP</label><input type="number" id="sbp" placeholder="mmHg" class="inp-base"></div>
                     <div class="input-group" data-scores="sofa,apache2"><label class="lbl-lg">Diastolic BP</label><input type="number" id="dbp" placeholder="mmHg" class="inp-base"></div>
                     <div class="input-group" data-scores="sofa,apache2"><label class="lbl-lg text-slate-500">MAP (mmHg)</label><div class="box-calc box-slate"><span id="calculatedMap" class="text-xl font-black text-indigo-600 leading-none">-</span></div></div>
                     <div class="input-group intense-only"><label class="lbl-lg">CRT (sec)</label><input type="text" inputmode="numeric" id="crt" placeholder="seconds" class="inp-base"></div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mt-4">
-                    <div class="input-group" data-scores="news2,saps2,apache2,saps3,mpm0"><label class="lbl-pri">HR (bpm)</label><input type="number" id="hr" placeholder="bpm" class="inp-base"></div>
+                    <div class="input-group" data-scores="news2,saps2,apache2,saps3"><label class="lbl-pri">HR (bpm)</label><input type="number" id="hr" placeholder="bpm" class="inp-base"></div>
                     <div class="input-group" data-scores="news2,saps2,apache2,saps3"><label class="lbl-pri">TEMP (°C)</label><input type="number" id="temp" step="0.1" placeholder="°C" class="inp-base"></div>
                     <div class="input-group intense-only" data-scores="news2,sofa,saps2,apache2"><label class="lbl-sec text-center leading-tight">SI (0.5-0.7)</label><div class="box-calc box-slate"><span id="calculatedSI" class="text-lg font-black text-slate-700 leading-none">-</span></div></div>
                     <div class="input-group intense-only" data-scores="news2,sofa,saps2,apache2"><label class="lbl-sec text-center leading-tight">RASI (<1.0)</label><div class="box-calc box-slate"><span id="calculatedRASI" class="text-lg font-black text-slate-700 leading-none">-</span></div></div>
@@ -389,7 +408,7 @@
             <div id="sec-enteral" class="space-y-4 pt-4 border-t border-slate-100 nav-section intense-only">
                 <h3 class="text-xs font-black text-emerald-600 uppercase tracking-[0.2em]">Enteral / Metabolic</h3>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start mt-4">
-                    <div class="input-group" data-scores="news2,sofa,saps2,apache2,saps3,mpm0"><label class="lbl-pri">Gluc</label><input type="number" id="gluc_cap" placeholder="mg/dl" class="inp-base"></div>
+                    <div class="input-group" data-scores="news2,sofa,saps2,apache2,saps3"><label class="lbl-pri">Gluc</label><input type="number" id="gluc_cap" placeholder="mg/dl" class="inp-base"></div>
                     <div class="input-group"><label class="lbl-sec text-center leading-tight text-emerald-700">Total Insulin</label><div class="box-calc box-slate bg-emerald-50/30 border-emerald-200"><span id="smart_insulin_total" class="text-sm font-black text-emerald-600 leading-none">-</span></div></div>
                     <div class="input-group"><label class="lbl-pri">Route</label><select id="nutri_route" class="sel-base" onchange="window.updateNutritionUI()"><option value="ayuno">Fasting NPO</option><option value="vo">Oral</option><option value="enteral">Enteral</option><option value="parenteral">Parenteral TPN</option></select></div>
                     <div class="input-group"><label class="lbl-sec text-center leading-tight">R Factor</label><div class="box-calc box-slate"><span id="calc_r_factor" class="text-lg font-black text-slate-700 leading-none">-</span></div></div>
@@ -443,8 +462,8 @@
                 <h3 class="text-xs font-black text-amber-600 uppercase tracking-[0.2em]">Renal</h3>
                 
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mt-4">
-                    <div class="input-group" data-scores="sofa,apache2,preop,saps3,mpm0"><label class="lbl-pri">Creatinine</label><input type="number" id="creatinine" step="0.1" placeholder="mg/dL" class="inp-base"></div>
-                    <div class="input-group" data-scores="sofa,saps2,apache2,news2,preop,saps3,mpm0"><label class="lbl-pri">BUN</label><input type="number" id="bun" placeholder="mg/dL" class="inp-base"></div>
+                    <div class="input-group" data-scores="sofa,apache2,preop,saps3"><label class="lbl-pri">Creatinine</label><input type="number" id="creatinine" step="0.1" placeholder="mg/dL" class="inp-base"></div>
+                    <div class="input-group" data-scores="sofa,saps2,apache2,news2,preop,saps3"><label class="lbl-pri">BUN</label><input type="number" id="bun" placeholder="mg/dL" class="inp-base"></div>
                     <div class="input-group intense-only"><label class="lbl-pri !normal-case">In (ml)</label><input type="text" inputmode="numeric" id="fluid_in" placeholder="mL" class="inp-base"></div>
                     <div class="input-group" data-scores="sofa,saps2"><label class="lbl-pri">Time Period (Hr)</label><input type="number" id="uoHours" min="1" placeholder="hours" class="inp-base"></div>
 
@@ -549,11 +568,26 @@
 <textarea id="hidden-copy-area" class="fixed opacity-0 pointer-events-none" aria-hidden="true"></textarea>
 
 <script>
-    const activeScores = { news2: !0, sofa: !0, saps2: !0, apache2: !0, saps3: !1, mpm0: !1, preop: !1 };
+    const activeScores = { news2: !0, sofa: !0, saps2: !0, apache2: !0, saps3: !1, preop: !1 };
     let isUlnaMode = !1, isProteinTarget = !1, isIntenseMode = !1, hasAttemptedCalculation = !1;
     let initialState = {};
 
-    const getVal = (id, i = !1) => { let e = document.getElementById(id); if(!e) return null; if(e.type === 'checkbox') return e.checked; if(e.value === "") return null; let n = i ? parseInt(e.value) : parseFloat(e.value); return isNaN(n) ? 0 : n; };
+    const getVal = (id, i = !1) => { let e = document.getElementById(id); if(!e) return null; if(e.type === 'checkbox') return e.checked; if(e.value === "") return null; let n = i ? parseInt(e.value, 10) : parseFloat(e.value); return isNaN(n) ? null : n; };
+
+    const normalizePatientData = (d) => {
+        d.vent = document.getElementById('vent_hfnc_mv')?.checked || document.getElementById('mech_cv_support')?.checked;
+        d.fio2_pct = d.fio2;
+        d.plat = d.platelets;
+        d.bil = d.bilirubin;
+        d.cr = d.creatinine;
+        d.hypercapnic = d.hypercapnic_failure;
+        d.rrt = !!document.getElementById('rrt_modality')?.value;
+        d.uo = d.urineOutput;
+        d.conscious = document.getElementById('consciousness_level')?.value;
+        d.kdigo_stage = document.getElementById('kdigo_stage')?.value;
+        d.arf = !!d.kdigo_stage;
+        return d;
+    };
     const displayError = m => { let e = document.getElementById('error-message'), t = document.getElementById('errorMessageText'); e && t && (t.textContent = m, e.classList.remove('hidden')); };
     const clearError = () => document.getElementById('error-message')?.classList.add('hidden');
 
@@ -564,14 +598,17 @@
     };
 
     window.loadPatientData = (bed) => {
-        let b = (bed?.split('[')[0].trim()) || 'default', s = localStorage.getItem('icu_bed_' + b), d = s ? JSON.parse(s) : initialState;
+        let b = (bed?.split('[')[0].trim()) || 'default', s = localStorage.getItem('icu_bed_' + b), d = initialState;
+        if (s) {
+            try { d = JSON.parse(s); } catch (e) { console.warn('Invalid bed data, resetting:', b); localStorage.removeItem('icu_bed_' + b); }
+        }
         document.querySelectorAll('input, select').forEach(e => e.id && e.id !== 'bed_number' && d[e.id] !== undefined && (e.type === 'checkbox' ? (e.checked = d[e.id]) : (e.value = d[e.id])));
         
         let t = (i, c, v) => document.getElementById(i)?.classList.toggle('hidden', v ? !document.getElementById(c)?.value : !document.getElementById(c)?.checked);
         t('mech_cv_settings_container', 'mech_cv_support'); t('ekg_container', 'ekg_analysis_toggle'); t('rrt_settings_container', 'rrt_modality', 1); t('adv_weaning_panel', 'weaning_toggle');
         let h = document.getElementById('height_toggle_btn'); h && (h.textContent = isUlnaMode ? 'Ulnar Lgt (cm)' : 'Height (cm)');
         
-        window.updateGCS(); window.updateNeuroScore(); window.updatePainScore(); window.updatePatientSummary(); window.updatePhysiology(); window.updateRespiratoryMechanics(); window.updateNutritionUI(); window.updateUIVisibility(); document.getElementById('ekg_input') && window.updateEKG(); clearError(); document.querySelectorAll('.score-card .text-3xl').forEach(el => el.textContent = '-');
+        window.updateGCS(); window.updateNeuroScore(); window.updatePainScore(); window.updatePatientSummary(); window.updatePhysiology(); window.updateRespiratoryMechanics(); window.updateNutritionUI(); window.updateUIVisibility(); document.getElementById('ekg_input') && window.updateEKG(); clearError(); document.querySelectorAll('.score-res-card .text-3xl').forEach(el => el.textContent = '-');
     };
 
     window.updatePropofol = () => {
@@ -601,9 +638,23 @@
         tE && (tE.textContent = rs.length ? rs.join(' + ') : '-');
     };
 
+    const updateIntenseBtnUI = () => {
+        const b = document.getElementById('intense_mode_btn'), l = document.getElementById('intense_mode_btn_label');
+        l && (l.textContent = isIntenseMode ? 'Intense' : 'Chill');
+        b?.classList.toggle('is-active-amber', isIntenseMode);
+    };
+    const updateDarkBtnUI = (isDark) => {
+        const d = isDark ?? document.documentElement.classList.contains('dark-theme');
+        const l = document.getElementById('dark_mode_btn_label'), i = document.getElementById('dark_mode_btn_icon');
+        const b = document.getElementById('dark_mode_btn');
+        l && (l.textContent = d ? 'Light' : 'Dark');
+        i && (i.textContent = d ? '☀️' : '🌙');
+        b?.classList.toggle('is-active-slate', d);
+    };
+
     window.toggleIntenseMode = (skipSave = !1) => {
         isIntenseMode = !isIntenseMode; document.body.classList[isIntenseMode?'add':'remove']('intense-active');
-        const b = document.getElementById('intense_mode_btn'); b && (b.textContent = isIntenseMode?'🩺':'🧮');
+        updateIntenseBtnUI();
         
         if (isIntenseMode && document.getElementById('select-preop')?.checked) {
             let ekgT = document.getElementById('ekg_analysis_toggle');
@@ -721,7 +772,7 @@
 
     window.toggleDarkMode = () => {
         const d = document.documentElement.classList.toggle('dark-theme');
-        document.getElementById('dark_mode_btn').textContent = d ? '☀️' : '🌙';
+        updateDarkBtnUI(d);
         try { localStorage.setItem('theme', d ? 'dark' : 'light'); } catch(e){}
     };
 
@@ -880,6 +931,7 @@
 
     window.updatePatientSummary = () => {
         let eH = null, w = getVal('weight'), h = getVal('height_input'), s = document.getElementById('sex')?.value, t = (i, v) => { document.getElementById(i)&&(document.getElementById(i).innerHTML=v) };
+        const dC = document.getElementById('dyn_corrbw');
         t('summary-height-label', isUlnaMode ? 'Estim. Height (cm)' : 'Height (cm)');
         isUlnaMode ? (eH = (h>0 && s) ? (s==='Male'?85.61+(3.16*h) : 85.80+(2.97*h)) : null, t('summary-height', eH?+eH.toFixed(1):'-')) : (eH = h, t('summary-height', h?+Number(h).toFixed(1):'-'));
         t('summary-weight', w?+Number(w).toFixed(1):'-');
@@ -888,13 +940,10 @@
             if(s) {
                 let ibw = (s==='Male'?50:45.5)+(0.91*(eH-152.4)), isU = bmi < 18.5, g = document.getElementById('ibw_vt_grid');
                 t('summary-ibw', +ibw.toFixed(1));
-                
-                let dC = document.getElementById('dyn_corrbw');
-g && (g.className = `grid gap-2 border-b border-slate-50 pb-2 transition-all ${isU ? 'grid-cols-3' : 'grid-cols-2'}`, dC && (dC.innerHTML = isU ? `<div><span class="adv-lbl">Corr.BW (<18.5)</span><span class="adv-val text-indigo-600">${+((ibw+w)/2).toFixed(1)}</span></div>` : ''));
-                
+                g && (g.className = `grid gap-2 border-b border-slate-50 pb-2 transition-all ${isU ? 'grid-cols-3' : 'grid-cols-2'}`, dC && (dC.innerHTML = isU ? `<div><span class="adv-lbl">Corr.BW (<18.5)</span><span class="adv-val text-indigo-600">${+((ibw+w)/2).toFixed(1)}</span></div>` : ''));
                 let lbw = s === 'Male' ? (9270 * w) / (6680 + (216 * bmi)) : (9270 * w) / (8780 + (244 * bmi));
                 t('summary-lbw', +lbw.toFixed(1));
-            } else { ['summary-ibw','summary-lbw'].forEach(x=>t(x,'-')); document.getElementById('dyn_corrbw').innerHTML = ''; }
+            } else { ['summary-ibw','summary-lbw'].forEach(x=>t(x,'-')); dC && (dC.innerHTML = ''); }
         } else { ['summary-bmi','summary-ibw','summary-lbw'].forEach(x=>t(x,'-')); dC && (dC.innerHTML = ''); }
     };
 
@@ -979,18 +1028,22 @@ g && (g.className = `grid gap-2 border-b border-slate-50 pb-2 transition-all ${i
 
     window.updateUIVisibility = () => {
         const d = getVal('select-daily') ?? !0, a = getVal('select-admission') ?? !1, p = getVal('select-preop') ?? !1;
-        Object.assign(activeScores, {news2: d||a, sofa: d||a, saps2: d, apache2: d||a, saps3: a, mpm0: a, preop: p});
+        if (!d && a) {
+            const adm = document.getElementById('select-admission');
+            if (adm) { adm.checked = !1; a = !1; }
+        }
+        Object.assign(activeScores, {news2: d||a, sofa: d||a, saps2: d, apache2: d||a, saps3: a, preop: p});
         const noS = !d && !a && !p, isPO = p && !d && !a, iBtn = document.getElementById('intense_mode_btn');
         document.getElementById('no-scores-warning')?.classList.toggle('hidden', !noS); document.getElementById('calc_btn')?.classList.toggle('hidden', noS);
         ['sec-labs', 'sec-neuro', 'sec-resp', 'sec-hemo', 'sec-enteral'].forEach(i => { let el = document.getElementById(i); el && (el.style.display = (isPO || noS) ? 'none' : ''); });
         isPO ? (isIntenseMode && window.toggleIntenseMode(!0), iBtn?.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none')) : iBtn?.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
         
-        let sa = activeScores.saps3 || activeScores.mpm0;
+        let sa = activeScores.saps3;
         document.querySelectorAll('.adm-expanded').forEach(e => e.classList.toggle('hidden', !sa));
         document.querySelectorAll('.input-group').forEach(g => g.dataset.scores && !g.classList.contains('adm-expanded') && g.classList.toggle('hidden', !g.dataset.scores.split(',').some(s => activeScores[s])));
         
         // Dynamic re-order for generated cards
-        ['news2', 'sofa', 'saps2', 'apache2', 'saps3', 'mpm0', 'asa', 'rcri', 'mica', 'pospom'].forEach(s => {
+        ['news2', 'sofa', 'saps2', 'apache2', 'saps3', 'asa', 'rcri', 'mica', 'pospom'].forEach(s => {
             const c = document.getElementById(`result-${s}`);
             if(c) { let ac = ['asa','rcri','mica','pospom'].includes(s)?p:activeScores[s]; ac ? (c.classList.remove('opacity-40', 'grayscale'), c.style.order="1") : (c.classList.add('opacity-40', 'grayscale'), c.style.order="10"); }
         });
@@ -1000,13 +1053,13 @@ g && (g.className = `grid gap-2 border-b border-slate-50 pb-2 transition-all ${i
     window.checkMissingData = () => {
         const sm = {'age':'sec-patient', 'weight':'sec-patient', 'height_input':'sec-patient', 'sex':'sec-patient', 'na':'sec-labs', 'k':'sec-labs', 'ph':'sec-labs', 'bicarb':'sec-labs', 'hct':'sec-labs', 'wbc':'sec-labs', 'platelets':'sec-labs', 'bilirubin':'sec-labs', 'admissionType':'sec-admission', 'icu_location':'sec-admission', 'hosp_days_before':'sec-admission', 'gcs':'sec-neuro', 'consciousness_level':'sec-neuro', 'rr':'sec-resp', 'spo2':'sec-resp', 'fio2':'sec-resp', 'sbp':'sec-hemo', 'dbp':'sec-hemo', 'hr':'sec-hemo', 'temp':'sec-hemo', 'creatinine':'sec-renal', 'bun':'sec-renal', 'urineOutput':'sec-renal', 'uoHours':'sec-renal', 'asa_class':'preop-block', 'functional_status':'preop-block', 'surgery_risk':'preop-block'};
         let req = [], mSec = new Set(), mLab = [];
-        let nB = activeScores.news2 || activeScores.sofa || activeScores.saps2 || activeScores.apache2 || activeScores.saps3 || activeScores.mpm0;
-        let nL = activeScores.sofa || activeScores.saps2 || activeScores.apache2 || activeScores.saps3 || activeScores.mpm0;
+        let nB = activeScores.news2 || activeScores.sofa || activeScores.saps2 || activeScores.apache2 || activeScores.saps3;
+        let nL = activeScores.sofa || activeScores.saps2 || activeScores.apache2 || activeScores.saps3;
         nB && req.push('age', 'temp', 'hr', 'sbp', 'dbp', 'rr', 'spo2', 'fio2', 'consciousness_level');
         nL && req.push('na', 'k', 'bun', 'creatinine', 'wbc', 'hct', 'platelets', 'urineOutput', 'uoHours');
         isIntenseMode && !req.includes('sex') && req.push('sex');
         activeScores.preop && (!req.includes('asa_class') && req.push('asa_class', 'surgery_risk', 'functional_status'), !req.includes('age') && req.push('age'), !req.includes('creatinine') && req.push('creatinine'));
-        (activeScores.saps3 || activeScores.mpm0) && !req.includes('admissionType') && req.push('admissionType');
+        activeScores.saps3 && !req.includes('admissionType') && req.push('admissionType');
 
         req.forEach(id => { let e = document.getElementById(id); if(!e || e.value === "" || e.value === null) { mSec.add(sm[id]); let t = e?.closest('.input-group')?.querySelector('label')?.textContent; mLab.push(t ? t.replace(/(\(.*?\))/g, '').replace(/\?$/, '').trim() : id); } });
         nB && !document.getElementById('gcs')?.value && (mSec.add('sec-neuro'), mLab.push("Glasgow"));
@@ -1019,8 +1072,7 @@ g && (g.className = `grid gap-2 border-b border-slate-50 pb-2 transition-all ${i
         const d = {};
         document.querySelectorAll('input, select').forEach(el => { if(el.id) d[el.id] = el.type === 'checkbox' ? el.checked : (el.value === '' ? null : (isNaN(el.value) ? el.value : parseFloat(el.value))); });
 
-        d.vent = document.getElementById('vent_hfnc_mv')?.checked || document.getElementById('mech_cv_support')?.checked;
-        d.fio2_pct = d.fio2; d.plat = d.platelets; d.bil = d.bilirubin; d.hypercapnic = d.hypercapnic_failure; d.rrt = !!document.getElementById('rrt_modality')?.value; d.uo = d.urineOutput; d.conscious = document.getElementById('consciousness_level')?.value; d.kdigo_stage = document.getElementById('kdigo_stage')?.value; d.arf = !!d.kdigo_stage;
+        normalizePatientData(d);
 
         let sW = [], bV = document.getElementById('bed_number')?.value.toUpperCase() || '';
         
@@ -1077,11 +1129,7 @@ g && (g.className = `grid gap-2 border-b border-slate-50 pb-2 transition-all ${i
             const p = (Math.exp(l) / (1 + Math.exp(l)) * 100).toFixed(1);
             document.getElementById('apache2Mortality').textContent = `Mortality: ${p}%`; document.getElementById('details-apache2').textContent = `In-Hospital Mortality: ~${p}%`;
         }
-        if(activeScores.saps3 || activeScores.mpm0) {
-            let mL = -5.3628 + (d.age !== null ? (d.age >= 80 ? 1.2758 : d.age >= 70 ? 0.9702 : d.age >= 60 ? 0.5774 : d.age >= 40 ? 0.1345 : 0) : 0) + ((d.rea_neuro_coma || (d.gcs !== null && d.gcs <= 5)) ? 1.3482 : 0) + ((d.hr !== null && d.hr >= 150) ? 0.5283 : 0) + ((d.sbp !== null && d.sbp <= 90) ? 0.8113 : 0) + (d.cpr_prior ? 1.0853 : 0) + ((d.admissionType === 'Medical' || d.admissionType === 'Emergency Surgical') ? 0.8656 : 0) + (d.vent_prior ? 0.9572 : 0) + (((d.cr !== null && d.cr >= 2.0) || d.arf || d.rrt) ? 0.5186 : 0) + (d.chr_cirr ? 1.0838 : 0) + (d.chr_meta ? 1.0646 : 0);
-            const mP = (Math.exp(mL) / (1 + Math.exp(mL)) * 100).toFixed(1);
-            document.getElementById('mpm0Score').textContent = `${Math.round((mP/100) * 50)}`; document.getElementById('mpm0Mortality').textContent = `Mortality: ~${mP}%`; document.getElementById('details-mpm0').textContent = `In-Hospital Mortality: ~${mP}%`;
-
+        if(activeScores.saps3) {
             let sR = [0, d.rea_cv_rhythm?-5:0, d.rea_neuro_seizures?-4:0, (d.rea_cv_hypo||d.rea_dig_acute)?3:0, d.rea_neuro_coma?4:0, (d.rea_cv_septic||d.rea_cv_anaph)?5:0, d.rea_hep_liver?6:0, d.rea_neuro_focal?7:0, d.rea_dig_panc?9:0, d.mass_effect?10:0].filter(x=>x!==0);
             let s3 = (d.age !== null ? (d.age >= 80 ? 18 : d.age >= 75 ? 15 : d.age >= 70 ? 14 : d.age >= 60 ? 7 : d.age >= 40 ? 5 : 0) : 0) + (d.icu_location === 'Hospital Ward' ? 14 : d.icu_location === 'Emergency Room' || d.icu_location === 'Other Hospital' ? 12 : 0) + (d.vaso_prior ? 10 : 0) + ((d.hosp_days_before !== null && d.hosp_days_before >= 14) ? 12 : 0) + Math.max(0, d.chr_aids ? 13 : 0, d.chr_cirr ? 12 : 0, d.chr_hema ? 11 : 0, d.chr_meta ? 8 : 0, d.chr_nyha ? 5 : 0) + (d.inf_nosocomial ? 6 : d.inf_community ? 4 : 0) + (d.admissionType === 'Emergency Surgical' ? 10 : d.admissionType === 'Medical' ? 8 : 0) + (sR.length > 0 ? Math.max(...sR) : 0) + (d.hr !== null ? (d.hr >= 160 ? 7 : d.hr >= 120 ? 2 : d.hr < 50 ? 5 : 0) : 0) + (d.sbp !== null ? (d.sbp < 70 ? 11 : d.sbp < 120 ? 3 : 0) : 0) + (d.temp !== null ? (d.temp >= 40 ? 4 : d.temp < 35 ? 7 : 0) : 0) + (d.vent ? ((d.pao2 !== null && d.fio2_pct) ? ((d.pao2/(d.fio2_pct/100)) < 100 ? 11 : (d.pao2/(d.fio2_pct/100)) < 200 ? 7 : 0) : 0) : 0) + (d.ph !== null ? (d.ph < 7.25 ? 4 : d.ph < 7.30 ? 2 : d.ph >= 7.50 ? 1 : 0) : 0) + (d.cr !== null ? (d.cr >= 3.5 ? 8 : d.cr >= 2.0 ? 7 : d.cr >= 1.2 ? 2 : 0) : 0) + (d.bil !== null ? (d.bil >= 6.0 ? 8 : d.bil >= 2.0 ? 5 : d.bil >= 1.2 ? 4 : 0) : 0) + (d.plat !== null ? (d.plat < 20 ? 13 : d.plat < 50 ? 8 : d.plat < 100 ? 5 : 0) : 0) + (d.wbc !== null ? (d.wbc >= 30 ? 2 : d.wbc < 1.5 ? 6 : 0) : 0) + (d.gcs !== null ? (d.gcs < 7 ? 15 : d.gcs <= 9 ? 10 : d.gcs <= 12 ? 7 : d.gcs <= 14 ? 2 : 0) : 0);
 
@@ -1188,10 +1236,10 @@ g && (g.className = `grid gap-2 border-b border-slate-50 pb-2 transition-all ${i
             rpt += nu + `\nHI: Temp ${val('temp')} °C\nME: Peso ${txt('summary-weight')} kg, ${document.getElementById('summary-height-label')?.textContent.includes('Estim')?'Talla Est.':'Talla'} ${txt('summary-height')} cm, IMC ${txt('summary-bmi')}, Peso Ideal ${txt('summary-ibw')} kg, Peso Magro ${txt('summary-lbw')} kg\n\nSCORES\n`;
         }
         let sl = [];
-        [{ c: activeScores.news2, l: 'NEWS2', r: 'news2Risk', s: 'news2Score' }, { c: activeScores.sofa, l: 'SOFA-2', r: 'sofaMortality', s: 'sofaScore' }, { c: activeScores.saps2, l: 'SAPS-II', r: 'saps2Mortality', s: 'saps2Score' }, { c: activeScores.apache2, l: 'APACHE-II', r: 'apache2Mortality', s: 'apache2Score' }, { c: activeScores.saps3, l: 'SAPS-III', r: 'saps3Mortality', s: 'saps3Score' }, { c: activeScores.mpm0, l: 'MPM0-III', r: 'mpm0Mortality', s: 'mpm0Score' }, { c: activeScores.preop, l: 'ASA', r: 'asaRisk', s: 'asaScore' }, { c: activeScores.preop, l: 'RCRI', r: 'rcriRisk', s: 'rcriScore' }, { c: activeScores.preop, l: 'NSQIP MICA', r: 'micaRisk', s: 'micaScore' }, { c: activeScores.preop, l: 'POSPOM', r: 'pospomRisk', s: 'pospomScore' }].forEach(i => {
+        [{ c: activeScores.news2, l: 'NEWS2', r: 'news2Risk', s: 'news2Score' }, { c: activeScores.sofa, l: 'SOFA-2', r: 'sofaMortality', s: 'sofaScore' }, { c: activeScores.saps2, l: 'SAPS-II', r: 'saps2Mortality', s: 'saps2Score' }, { c: activeScores.apache2, l: 'APACHE-II', r: 'apache2Mortality', s: 'apache2Score' }, { c: activeScores.saps3, l: 'SAPS-III', r: 'saps3Mortality', s: 'saps3Score' }, { c: activeScores.preop, l: 'ASA', r: 'asaRisk', s: 'asaScore' }, { c: activeScores.preop, l: 'RCRI', r: 'rcriRisk', s: 'rcriScore' }, { c: activeScores.preop, l: 'NSQIP MICA', r: 'micaRisk', s: 'micaScore' }, { c: activeScores.preop, l: 'POSPOM', r: 'pospomRisk', s: 'pospomScore' }].forEach(i => {
             if (i.c && txt(i.s) !== '-' && txt(i.s) !== 'N/A') {
                 let rsk = txt(i.r).split(': ')[1] || txt(i.r);
-                sl.push(`${i.l}: ${txt(i.s)} (${['SOFA-2','SAPS-II','APACHE-II','SAPS-III','MPM0-III','POSPOM'].includes(i.l)?'Mort. ':['RCRI','NSQIP MICA'].includes(i.l)?'MACE Risk: ':''}${rsk})`);
+                sl.push(`${i.l}: ${txt(i.s)} (${['SOFA-2','SAPS-II','APACHE-II','SAPS-III','POSPOM'].includes(i.l)?'Mort. ':['RCRI','NSQIP MICA'].includes(i.l)?'MACE Risk: ':''}${rsk})`);
             }
         });
         if (val('vent_mode_internal') === 'PSV' && txt('calc_expres') !== '-' && txt('calc_expres')) sl.push(`ExPreS: ${txt('calc_expres').replace('(', 'pts (')}`);
@@ -1219,15 +1267,28 @@ g && (g.className = `grid gap-2 border-b border-slate-50 pb-2 transition-all ${i
         }
     };
 
-window.copyToClipboard = () => {
-        let report = window.generateReportText();
-        if (!report.trim()) return;
-        const area = document.getElementById('hidden-copy-area');
-        if(area) {
-            area.value = report; area.select(); document.execCommand('copy');
-        }
+    const showCopyToast = () => {
         const t = document.getElementById('copy-toast');
-        if(t) { t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
+        if (t) { t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
+    };
+
+    window.copyToClipboard = async () => {
+        const report = window.generateReportText();
+        if (!report.trim()) return;
+        try {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(report);
+            } else {
+                const area = document.getElementById('hidden-copy-area');
+                if (!area) return;
+                area.value = report;
+                area.select();
+                document.execCommand('copy');
+            }
+            showCopyToast();
+        } catch (e) {
+            console.warn('Clipboard copy failed:', e);
+        }
     };
 
     let isNavigating = !1, vSec = new Set();
@@ -1242,14 +1303,27 @@ window.copyToClipboard = () => {
 
     window.onload = () => {
         fetch('manifest.json').then(r => r.json()).then(d => { const v = document.getElementById('app-version'); if(v && d.version) v.textContent = d.version; }).catch(e => console.log('Modo local sin manifest'));
+        const scoreCardThemes = {
+            green: { border: 'border-green-500', title: 'text-green-700', score: 'text-green-600', badge: 'bg-green-50 border-green-100', badgeText: 'text-slate-700', details: 'text-green-700 border-green-100' },
+            yellow: { border: 'border-yellow-500', title: 'text-yellow-700', score: 'text-yellow-600', badge: 'bg-yellow-50 border-yellow-100', badgeText: 'text-slate-700', details: 'text-yellow-700 border-yellow-100' },
+            red: { border: 'border-red-500', title: 'text-red-700', score: 'text-red-600', badge: 'bg-red-50 border-red-100', badgeText: 'text-slate-700', details: 'text-red-700 border-red-100' },
+            blue: { border: 'border-blue-500', title: 'text-blue-700', score: 'text-blue-600', badge: 'bg-blue-50 border-blue-100', badgeText: 'text-slate-700', details: 'text-blue-700 border-blue-100' },
+            orange: { border: 'border-orange-500', title: 'text-orange-700', score: 'text-orange-600', badge: 'bg-orange-50 border-orange-100', badgeText: 'text-slate-700', details: 'text-orange-700 border-orange-100' },
+            cyan: { border: 'border-cyan-500', title: 'text-cyan-700', score: 'text-cyan-600', badge: 'bg-cyan-50 border-cyan-100', badgeText: 'text-slate-700', details: 'text-cyan-700 border-cyan-100' },
+            purple: { border: 'border-purple-500', title: 'text-purple-700', score: 'text-purple-600', badge: 'bg-purple-50 border-purple-100', badgeText: 'text-slate-700', details: 'text-purple-700 border-purple-100' }
+        };
         const rC = [
             {id:'news2',n:'NEWS2',c:'green',l:'Clinical Risk'}, {id:'sofa',n:'SOFA-2',c:'yellow',l:'Mortality'},
             {id:'saps2',n:'SAPS-II',c:'red',l:'Mortality'}, {id:'apache2',n:'APACHE-II',c:'blue',l:'Mortality'},
-            {id:'saps3',n:'SAPS-III',c:'orange',l:'Mortality'}, {id:'mpm0',n:'MPM0-III',c:'cyan',l:'Mortality'},
+            {id:'saps3',n:'SAPS-III',c:'orange',l:'Mortality'},
             {id:'asa',n:'ASA',c:'purple',l:'Class'}, {id:'rcri',n:'RCRI',c:'purple',l:'MACE Risk'},
             {id:'mica',n:'NSQIP MICA',c:'purple',l:'MACE Risk',sm:1}, {id:'pospom',n:'POSPOM',c:'purple',l:'Mortality'}
         ];
-        document.getElementById('dynamic-score-cards').innerHTML = rC.map(s => `<div id="result-${s.id}" class="score-res-card border-l-8 border-${s.c}-500"><div class="flex justify-between items-center w-full"><div class="flex items-center space-x-4"><h3 class="${s.sm?'text-sm w-32':'text-lg w-24'} font-black text-${s.c}-700 uppercase tracking-tight">${s.n}</h3><div class="text-3xl font-black text-${s.c}-600" id="${s.id}Score">-</div></div><div class="text-xs font-black text-slate-700 bg-${s.c}-50 px-3 py-2 rounded-xl border border-${s.c}-100 text-right min-w-[130px]" id="${s.id}${s.l==='Class'||s.l.includes('Risk')?'Risk':'Mortality'}">${s.l}: -</div></div><div class="text-[10px] font-bold text-${s.c}-700 mt-3 pt-2 border-t border-${s.c}-100 score-details hidden" id="details-${s.id}"></div></div>`).join('');
+        document.getElementById('dynamic-score-cards').innerHTML = rC.map(s => {
+            const th = scoreCardThemes[s.c] || scoreCardThemes.blue;
+            const riskId = `${s.id}${s.l === 'Class' || s.l.includes('Risk') ? 'Risk' : 'Mortality'}`;
+            return `<div id="result-${s.id}" class="score-res-card border-l-8 ${th.border}"><div class="flex justify-between items-center w-full"><div class="flex items-center space-x-4"><h3 class="${s.sm ? 'text-sm w-32' : 'text-lg w-24'} font-black ${th.title} uppercase tracking-tight">${s.n}</h3><div class="text-3xl font-black ${th.score}" id="${s.id}Score">-</div></div><div class="text-xs font-black ${th.badgeText} ${th.badge} px-3 py-2 rounded-xl border text-right min-w-[130px]" id="${riskId}">${s.l}: -</div></div><div class="text-[10px] font-bold ${th.details} mt-3 pt-2 border-t score-details hidden" id="details-${s.id}"></div></div>`;
+        }).join('');
 
         const fourD = [{id:'eye',l:'Eye',o:['4 - Open/Tracking','3 - Open/Not track','2 - Closed/Voice','1 - Closed/Pain','0 - Remains closed']},{id:'motor',l:'Motor',o:['4 - Thumbs up/Fist','3 - Localizes pain','2 - Flexion','1 - Extension','0 - No response']},{id:'brainstem',l:'Brainstem',o:['4 - Pupil/Cornea intact','3 - One wide/fixed','2 - Pupil/Cornea abs.','1 - Both abs.','0 - All absent']},{id:'resp',l:'Resp',o:['4 - Regular','3 - Cheyne-Stokes','2 - Irregular','1 - Paces vent','0 - Apnea/Vent dep.']}];
         document.getElementById('four_container').innerHTML = fourD.map(d=>`<select id="four_${d.id}" class="sel-sm"><option value="">${d.l}</option>${d.o.map(o=>`<option value="${o.split(' ')[0]}">${o}</option>`).join('')}</select>`).join('');
@@ -1267,7 +1341,7 @@ window.copyToClipboard = () => {
         document.getElementById('dyn_labs_1').innerHTML = l1.map(x=>`<div class="input-group" data-scores="${x.s}"><label class="lbl-pri">${x.l}</label><input type="number" id="${x.i}" step="${x.t||'any'}" placeholder="${x.p}" class="inp-base"></div>`).join('');
         document.getElementById('dyn_labs_2').innerHTML = l2.map(x=>`<div class="input-group" data-scores="${x.s}"><label class="lbl-pri">${x.l}</label><input type="number" id="${x.i}" step="${x.t||'any'}" placeholder="${x.p}" class="inp-base"></div>`).join('');
 
-        const ac = [{i:'cpr_prior',l:'CPR prior to admission',s:'mpm0'},{i:'vaso_prior',l:'Vasoactive therapy prior',s:'saps3'},{i:'dnr_dni',l:'DNR / DNI Status',s:'mpm0'},{i:'vent_prior',l:'Intubated/Ventilated Prior',s:'mpm0'},{i:'inf_nosocomial',l:'Nosocomial Infection',s:'saps3'},{i:'inf_community',l:'Community-Acq. Infection',s:'saps3'},{i:'rea_cv_rhythm',l:'CV: Rhythm disturbances',s:'saps3'},{i:'rea_cv_hypo',l:'CV: Hypovol/Hemorrhagic shock',s:'saps3'},{i:'rea_cv_septic',l:'CV: Septic shock',s:'saps3'},{i:'rea_cv_anaph',l:'CV: Anaphylactic/Mixed shock',s:'saps3'},{i:'rea_neuro_seizures',l:'Neuro: Seizures',s:'saps3'},{i:'rea_neuro_coma',l:'Neuro: Coma/Stupor',s:'saps3,mpm0'},{i:'rea_neuro_focal',l:'Neuro: Focal deficit',s:'saps3'},{i:'mass_effect',l:'Neuro: Intracranial Mass Effect',s:'saps3'},{i:'rea_dig_acute',l:'Digestive: Acute abdomen/other',s:'saps3'},{i:'rea_dig_panc',l:'Digestive: Severe pancreatitis',s:'saps3'},{i:'gi_bleed',l:'Digestive: Acute GI Bleeding',s:'mpm0'},{i:'rea_hep_liver',l:'Hepatic: Liver failure',s:'saps3'},{i:'cva_stroke',l:'CVA (Stroke)',s:'mpm0'}];
+        const ac = [{i:'vaso_prior',l:'Vasoactive therapy prior',s:'saps3'},{i:'inf_nosocomial',l:'Nosocomial Infection',s:'saps3'},{i:'inf_community',l:'Community-Acq. Infection',s:'saps3'},{i:'rea_cv_rhythm',l:'CV: Rhythm disturbances',s:'saps3'},{i:'rea_cv_hypo',l:'CV: Hypovol/Hemorrhagic shock',s:'saps3'},{i:'rea_cv_septic',l:'CV: Septic shock',s:'saps3'},{i:'rea_cv_anaph',l:'CV: Anaphylactic/Mixed shock',s:'saps3'},{i:'rea_neuro_seizures',l:'Neuro: Seizures',s:'saps3'},{i:'rea_neuro_coma',l:'Neuro: Coma/Stupor',s:'saps3'},{i:'rea_neuro_focal',l:'Neuro: Focal deficit',s:'saps3'},{i:'mass_effect',l:'Neuro: Intracranial Mass Effect',s:'saps3'},{i:'rea_dig_acute',l:'Digestive: Acute abdomen/other',s:'saps3'},{i:'rea_dig_panc',l:'Digestive: Severe pancreatitis',s:'saps3'},{i:'rea_hep_liver',l:'Hepatic: Liver failure',s:'saps3'}];
         document.getElementById('dyn_acute_conds').innerHTML = ac.map(x=>`<label class="flex items-center space-x-2 cursor-pointer" data-scores="${x.s}"><input type="checkbox" id="${x.i}" class="accent-teal-600 h-4 w-4 rounded"><span class="text-[10px] font-bold text-slate-700">${x.l}</span></label>`).join('');
 
         const chr = [{i:'chr_meta',l:'Metastatic Cancer'},{i:'chr_hema',l:'Hematologic Malignancy'},{i:'chr_aids',l:'AIDS / Immunocompromise'},{i:'chr_cirr',l:'Cirrhosis'},{i:'chr_ckd',l:'Chronic Kidney Disease'},{i:'chr_arry',l:'Cardiac Arrhythmia'},{i:'chr_nyha',l:'Heart Failure (NYHA IV)'},{i:'chr_lung',l:'Chronic Lung Disease'}];
@@ -1304,8 +1378,8 @@ const surg = [{i:'preop_ihd',l:'Ischemic Heart Disease'},{i:'preop_chf',l:'Conge
         localStorage.getItem('intenseMode') === 'true' && window.toggleIntenseMode(!0);
         if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark-theme');
-            const b = document.getElementById('dark_mode_btn'); b && (b.textContent = '☀️');
-        }
+            updateDarkBtnUI(!0);
+        } else updateDarkBtnUI(!1);
 
         document.getElementById('score-selection-panel')?.addEventListener('change', e => { 
             if(e.target.classList.contains('score-toggle')) { 
@@ -1344,7 +1418,7 @@ const surg = [{i:'preop_ihd',l:'Ischemic Heart Disease'},{i:'preop_chf',l:'Conge
                 const rT = {
                     'bed_number': () => {
                         let v = e.target.value, u = v.toUpperCase(), n = v.split('[')[0].trim();
-                        document.title = n ? `${n} - ICU Scores` : 'ICU Scores Calculator';
+                        document.title = n ? `${n} - CritCalc` : 'CritCalc';
 
                         const cL = (cmd, arr) => { if(u.includes(cmd)){ arr.forEach(i=>{let el=document.getElementById(i);if(el)el.value='';}); v = v.replace(new RegExp('\\['+cmd.replace(/\W/g,'')+'\\]', 'i'), '').trim(); e.target.value = v; u = v.toUpperCase(); } };
                         
